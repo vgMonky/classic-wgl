@@ -21,17 +21,24 @@ export function initCursor() {
 }
 
 export function initFPSCounter() {
-
     let fpsCounter = game.getEntity("fpsCounter");
     let compFPSText = fpsCounter.getComponent(Text);
+
+    let timeAccumulator = 0;
+    let lastFPS = 0;
 
     fpsCounter.registerCall(
         "update",
         function() {
-            compFPSText.setText(game.fps.toString());
+            timeAccumulator += game.deltaTime;
+            if (timeAccumulator >= 0.2) {
+                lastFPS = game.fps;
+                compFPSText.setText(lastFPS.toString());
+                timeAccumulator = 0;
+            }
         });
-
 }
+
 
 export function initInfoText() {
 
