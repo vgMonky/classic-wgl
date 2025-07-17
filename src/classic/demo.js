@@ -11,8 +11,8 @@ import {
     initNavMeshEditor,
     initAgent,
     initDEVButtons
-} from "/classic/prefabs.js";
-import { initUI } from "/classic/prefabs2.js";
+} from "./prefabs.js";
+import { initUI } from "./prefabs2.js";
 
 
 async function initContext() {
@@ -22,7 +22,7 @@ async function initContext() {
     await game.init();
     await game.loadResources();
 
-    await game.load("state.json");
+    await game.load("/state.json");
     
     initCursor();
     initFPSCounter();

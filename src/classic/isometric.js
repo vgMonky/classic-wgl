@@ -105,6 +105,7 @@ class Tilemap extends Drawable {
     }
 
     loadMap(url) {
+        console.log("[loadMap] Fetching map from:", url); // check
         fetch(url)
             .then(res => res.text())
             .then(text => {
@@ -323,6 +324,7 @@ class IsometricNavMesh extends Tilemap {
     }
 
     loadMap(url) {
+        console.log("[loadMap] Fetching map from:", url); // check
         var self = this;
         fetch(url)
             .then(res => res.text())

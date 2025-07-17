@@ -1,6 +1,6 @@
-import game from "./state.js";
-import { Rectangle } from "./transforms.js";
-import { Collider } from "./collision.js";
+import game from "/classic/state.js";
+import { Rectangle } from "/classic/transforms.js";
+import { Collider } from "/classic/collision.js";
 
 // // Objective: Final API based on UIManager class
 //
