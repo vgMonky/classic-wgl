@@ -10,7 +10,6 @@ import { Collider } from "./collision.js";
 // let text = UI.spawnText(args..)
 // ...
 
-
 // type Anchor =
 //     | 'top-left' | 'top-center' | 'top-right'
 //     | 'mid-left' | 'mid-center' | 'mid-right'
@@ -35,9 +34,9 @@ class UIElement {
         // Add Rectangle component
         this.rectangle = this.entity.addComponent(
             Rectangle,
-            [x, y, -1000],
-            [this.width, this.height, 1],
-            [1, 0, 0, 0.3], // white, opaque by default
+            [x, y, -1000], // pos
+            [this.width, this.height, 1], // scale
+            [1, 0, 0, 0.3], // color
             true // ignoreCam
         );
 
