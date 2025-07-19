@@ -2,6 +2,7 @@
 
 ## Description
 A classic WebGL game engine.
+<img width="2048" height="1152" alt="2025-07-18-220958_2048x1152_scrot" src="https://github.com/user-attachments/assets/1c4ff7dd-85f6-4401-89c9-88da9ed2a707" />
 
 ## Develop (git and nix)
 1. Clone the repo and install dep:
