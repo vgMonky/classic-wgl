@@ -2,6 +2,15 @@ import game from "/classic/state.js";
 import { Rectangle } from "/classic/transforms.js";
 import { Collider } from "/classic/collision.js";
 
+// // Objective: Final API based on UIManager class
+//
+// -[x] let UI = new.UImanager(game)
+// -[x] let panel = UI.spawnElement(args...)
+// -[ ] let panel = UI.spawnPanel(args...)
+// -[ ] let button = UI.spawnBtn(args...)
+// -[ ] let text = UI.spawnText(args..)
+// ...
+
 // type Anchor =
 //     | 'top-left' | 'top-center' | 'top-right'
 //     | 'mid-left' | 'mid-center' | 'mid-right'
@@ -9,13 +18,22 @@ import { Collider } from "/classic/collision.js";
 
 // Most basic UI class is UIElement, from this other elements can be extanded.
 class UIElement {
-    constructor(name, parent, parentAnchor, selfAnchor, color) {
+    constructor(
+        name,
+        parent,
+        parentAnchor,
+        selfAnchor,
+        color,
+        width,
+        heigth,
+        zlayer
+    ) {
         this.parent = parent;
         this.parentAnchor = parentAnchor;
         this.selfAnchor = selfAnchor;
 
-        this.width = 100;
-        this.height = 100;
+        this.width = width;
+        this.height = heigth;
 
         // Spawn the entity
         this.entity = game.spawnEntity(`ui-${name}`);
@@ -26,7 +44,7 @@ class UIElement {
         // Add Rectangle component
         this.rectangle = this.entity.addComponent(
             Rectangle,
-            [x, y, -1000], // pos
+            [x, y, zlayer], // pos
             [this.width, this.height, 1], // scale
             color, // color
             true // ignoreCam
@@ -35,7 +53,7 @@ class UIElement {
         // Register update loop
         this.entity.registerCall("refreshUI", () => {
             const [nx, ny] = this.calculateGlobalPos();
-            this.rectangle.position = [nx, ny, -1000];
+            this.rectangle.position = [nx, ny, zlayer];
         });
     }
 
@@ -69,28 +87,33 @@ class UIElement {
             parentPos[1] + parentOffset.y - selfOffset.y
         ];
     }
-}    
+}
 
-// // Objective: Final API based on UIManager class
-//
-// let UI = new.UImanager(game)
-// let panel = UI.spawnPanel(args...)
-// let button = UI.spawnBtn(args...)
-// let text = UI.spawnText(args..)
-// ...
+// UIBtn Class
+
 class UIManager {
     constructor(gameInstance) {
         this.game = gameInstance;
         this.elements = new Map(); // name -> UIElement
     }
 
-    spawnElement(name, parent, parentAnchor, selfAnchor, color = [0, 0, 0, 0.3]) {
+    spawnElement(
+        name,
+        parent = game.canvas,
+        parentAnchor,
+        childAnchor,
+        color = [1, 1, 1, 0.1],
+        width = 100,
+        heigth = 100,
+        zlayer = -1000 
+    ) {
+
         if (this.elements.has(name)) {
             console.error(`[UIManager] Error: can't spawn element with duplicated name "${name}"`);
             return null;
         }
 
-        const element = new UIElement(name, parent, parentAnchor, selfAnchor, color);
+        const element = new UIElement(name, parent, parentAnchor, childAnchor, color, width, heigth, zlayer);
         this.elements.set(name, element);
         return element;
     }
@@ -118,11 +141,27 @@ class UIManager {
 export function initUI() {
     let UI = new UIManager(game);
     
+    // Simple use
     UI.spawnElement( "box", game.canvas, "top-left", "top-left")
-    UI.spawnElement( "box1", game.canvas, "top-center", "top-center");
-    UI.spawnElement( "box1", game.canvas, "top-right", "top-right"); // consol.warn same name!
+    UI.spawnElement( "box2", game.canvas, "top-right", "top-right"); 
+    let parent = UI.spawnElement( "box3", game.canvas, "top-center", "top-center");
+    UI.spawnElement( "box4", parent, "bot-center", "mid-center", [1,0,0,0.8], 20, 20);
 
-    let parent = UI.spawnElement( "boxParent", game.canvas, "mid-center", "mid-center");
-    let child = UI.spawnElement("boxChild", parent, "mid-center", "top-right", [1,0,0,0.1])
-    child.destroyElement
+
+    // Array experiment
+    let iteration = 5;
+    let blockSizeX = 20;
+    let blockSizeY = 20;
+    let gapDistance = 40;
+
+    let lastElement = UI.spawnElement("block0", game.canvas, "mid-center", "mid-center", [1, 0, 0, 0.8], blockSizeX, blockSizeY);
+    for (let i = 1; i < iteration; i++) {
+        let gap = UI.spawnElement(`gap${i}`, lastElement, "mid-right", "mid-left", [0, 0, 1, 0.8], gapDistance, 1);
+        lastElement = UI.spawnElement(`block${i}`, gap, "mid-right", "mid-left", [1, 0, 0, 0.5], blockSizeX, blockSizeY);
+    }
+
+    
+    // Destroy element
+    UI.spawnElement("box8", game.canvas, "mid-center", "mid-center", [1,0,1,0.8], 100, 100)
+    UI.destroyElement("box8")
 }
