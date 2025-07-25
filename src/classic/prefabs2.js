@@ -1,11 +1,11 @@
 import game from "/classic/state.js";
-import { Rectangle } from "/classic/transforms.js";
+import { Rectangle, Text } from "/classic/transforms.js";
 import { Collider } from "/classic/collision.js";
 
 // // Objective: Final API based on UIManager class
 //
 // -[x] let UI = new.UImanager(game)
-// -[x] let panel = UI.spawnElement(args...)
+// -[x] let element = UI.spawnElement(args...)
 // -[ ] let panel = UI.spawnPanel(args...)
 // -[ ] let button = UI.spawnBtn(args...)
 // -[ ] let text = UI.spawnText(args..)
@@ -16,7 +16,7 @@ import { Collider } from "/classic/collision.js";
 //     | 'mid-left' | 'mid-center' | 'mid-right'
 //     | 'bot-left' | 'bot-center' | 'bot-right';
 
-// Most basic UI class is UIElement, from this other elements can be extanded.
+// --- Most basic UI class is UIElement, from this other elements can be extended ---
 class UIElement {
     constructor(
         name,
@@ -25,7 +25,7 @@ class UIElement {
         selfAnchor,
         color,
         width,
-        heigth,
+        height,
         zlayer
     ) {
         this.parent = parent;
@@ -33,10 +33,10 @@ class UIElement {
         this.selfAnchor = selfAnchor;
 
         this.width = width;
-        this.height = heigth;
+        this.height = height;
 
         // Spawn the entity
-        this.entity = game.spawnEntity(`ui-${name}`);
+        this.entity = game.spawnEntity(name); // prefixed from UIManager
 
         // Initial position
         const [x, y] = this.calculateGlobalPos();
@@ -89,34 +89,154 @@ class UIElement {
     }
 }
 
-// UIBtn Class
+class UIText extends UIElement {
+    constructor(
+        name,
+        parent,
+        parentAnchor,
+        selfAnchor,
+        text,
+        textScale,
+        maxWidth,
+        color,
+        bgColor,
+        zlayer
+    ) {
+        const fontSize = [16, 16];
+        const glyphSize = [32, 32];
+        const glyphStr = "!\"#$%&'()*+,-./?0123456789:;<=>@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`{|}~";
+
+        const scaledGlyphSize = [
+            glyphSize[0] * textScale,
+            glyphSize[1] * textScale
+        ];
+
+        const maxCharPerLine = Math.floor(maxWidth / scaledGlyphSize[0]);
+        const lines = UIText.wrapText(text, maxCharPerLine);
+        const maxLineLength = Math.max(...lines.map(l => l.length));
+        const lineCount = lines.length;
+
+        const autoWidth = scaledGlyphSize[0] * maxLineLength;
+        const autoHeight = scaledGlyphSize[1] * lineCount;
+
+        super(name, parent, parentAnchor, selfAnchor, bgColor, autoWidth, autoHeight, zlayer);
+
+        this.textScale = textScale;
+        this.color = color;
+        this.fontSize = fontSize;
+        this.glyphSize = glyphSize;
+        this.glyphStr = glyphStr;
+        this.maxWidth = maxWidth;
+        this.maxCharPerLine = maxCharPerLine;
+        this.textComps = [];
+
+        this.setText(text);
+
+        this.entity.registerCall("refreshUI", () => {
+            this._refreshPositions();
+        });
+    }
+
+    static wrapText(str, maxCharPerLine) {
+        const words = str.split(' ');
+        const lines = [];
+        let line = "";
+
+        for (let word of words) {
+            if ((line + word).length < maxCharPerLine) {
+                line += (line.length ? " " : "") + word;
+            } else {
+                if (line.length > 0) lines.push(line);
+                line = word;
+            }
+        }
+        if (line.length) lines.push(line);
+        return lines;
+    }
+
+    _refreshPositions() {
+        const [x, y] = this.calculateGlobalPos();
+        const lineHeight = this.glyphSize[1] * this.textScale;
+
+        for (let i = 0; i < this.textComps.length; i++) {
+            this.textComps[i].position = [x, y + i * lineHeight, this.rectangle.position[2]];
+        }
+    }
+
+    setText(str) {
+        for (let comp of this.textComps) {
+            this.entity.removeComponent(comp);
+        }
+        this.textComps = [];
+
+        const lines = UIText.wrapText(str, this.maxCharPerLine);
+        const [x, y] = this.calculateGlobalPos();
+        const lineHeight = this.glyphSize[1] * this.textScale;
+
+        for (let i = 0; i < lines.length; i++) {
+            const lineText = this.entity.addComponent(
+                Text,
+                [x, y + i * lineHeight, this.rectangle.position[2]],
+                [this.textScale, this.textScale, 1],
+                "font",
+                [lines[i].length, 1],
+                this.fontSize,
+                this.glyphSize,
+                this.glyphStr,
+                this.color,
+                [0, 0, 0, 0],
+                true
+            );
+            lineText.setText(lines[i].toUpperCase());
+            this.textComps.push(lineText);
+        }
+    }
+}
+
+
+
+// --- How to manage this fucking elements? ---
 
 class UIManager {
     constructor(gameInstance) {
         this.game = gameInstance;
         this.elements = new Map(); // name -> UIElement
+        this.indexCounter = 0;
+    }
+
+    _generateName(type = "element") {
+        return `ui-${this.indexCounter++}-${type}`;
     }
 
     spawnElement(
-        name,
         parent = game.canvas,
-        parentAnchor,
-        childAnchor,
-        color = [1, 1, 1, 0.1],
+        parentAnchor = "mid-center",
+        selfAnchor = "mid-center",
         width = 100,
-        heigth = 100,
-        zlayer = -1000 
+        height = 100,
+        color = [1, 1, 1, 0.1]
     ) {
-
-        if (this.elements.has(name)) {
-            console.error(`[UIManager] Error: can't spawn element with duplicated name "${name}"`);
-            return null;
-        }
-
-        const element = new UIElement(name, parent, parentAnchor, childAnchor, color, width, heigth, zlayer);
+        const name = this._generateName("element");
+        const element = new UIElement(name, parent, parentAnchor, selfAnchor, color, width, height, -1000);
         this.elements.set(name, element);
         return element;
     }
+
+    spawnText(
+        parent = game.canvas,
+        parentAnchor = "bot-center",
+        selfAnchor = "bot-center",
+        text = "TEXT",
+        textScale = 1,
+        maxWidth = 200,
+        color = [0, 0.7, 0, 1],
+        bgColor = [0, 0.1, 0, 1],
+    ) {
+        const name = this._generateName("text");
+        const textElement = new UIText(name, parent, parentAnchor, selfAnchor, text, textScale, maxWidth, color, bgColor, -1000);
+        this.elements.set(name, textElement);
+        return textElement;
+    }    
 
     getElement(name) {
         return this.elements.get(name);
@@ -141,27 +261,18 @@ class UIManager {
 export function initUI() {
     let UI = new UIManager(game);
     
-    // Simple use
-    UI.spawnElement( "box", game.canvas, "top-left", "top-left")
-    UI.spawnElement( "box2", game.canvas, "top-right", "top-right"); 
-    let parent = UI.spawnElement( "box3", game.canvas, "top-center", "top-center");
-    UI.spawnElement( "box4", parent, "bot-center", "mid-center", [1,0,0,0.8], 20, 20);
+    // UI Element
+    UI.spawnElement(game.canvas, "top-left", "top-left")
+    UI.spawnElement(game.canvas, "top-center", "top-center");
+    // nesting elements
+    let parent = UI.spawnElement(game.canvas, "top-right", "top-right"); 
+    UI.spawnElement(parent, "bot-left", "mid-center");
 
-
-    // Array experiment
-    let iteration = 5;
-    let blockSizeX = 20;
-    let blockSizeY = 20;
-    let gapDistance = 40;
-
-    let lastElement = UI.spawnElement("block0", game.canvas, "mid-center", "mid-center", [1, 0, 0, 0.8], blockSizeX, blockSizeY);
-    for (let i = 1; i < iteration; i++) {
-        let gap = UI.spawnElement(`gap${i}`, lastElement, "mid-right", "mid-left", [0, 0, 1, 0.8], gapDistance, 1);
-        lastElement = UI.spawnElement(`block${i}`, gap, "mid-right", "mid-left", [1, 0, 0, 0.5], blockSizeX, blockSizeY);
-    }
-
-    
-    // Destroy element
-    UI.spawnElement("box8", game.canvas, "mid-center", "mid-center", [1,0,1,0.8], 100, 100)
-    UI.destroyElement("box8")
+    // UI Text
+    UI.spawnText();
+    // nesting text
+    let root = UI.spawnElement(game.canvas, "mid-center", "mid-center", 200, 200, [0,0,0,0.9])
+    let title = UI.spawnText( root ,"top-left", "top-left", "title", 1, 150)
+    let gap = UI.spawnElement(title, "bot-left", "top-left", 0, 2)
+    let text = UI.spawnText( gap,"bot-left", "top-left", "Whats up my friend!! How you doing?", 0.4, 200)    
 }
