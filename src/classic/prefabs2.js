@@ -218,6 +218,10 @@ class UIArray extends UIElement {
         this.align = align;
         this.spacing = spacing;
         this.children = [];
+
+        this.entity.registerCall("refreshUI", () => {
+            this._recalculateLayout();
+        });
     }
 
     addChild(child) {
