@@ -6,15 +6,15 @@ import { Collider } from "/classic/collision.js";
 //
 // -[x] let UI = new.UImanager(game)
 // -[x] let element = UI.spawnElement(args...)
-// -[ ] let panel = UI.spawnPanel(args...)
+// -[x] let text = UI.spawnText(args..)
 // -[ ] let button = UI.spawnBtn(args...)
-// -[ ] let text = UI.spawnText(args..)
 // ...
 
 // type Anchor =
 //     | 'top-left' | 'top-center' | 'top-right'
 //     | 'mid-left' | 'mid-center' | 'mid-right'
 //     | 'bot-left' | 'bot-center' | 'bot-right';
+
 
 // --- Most basic UI class is UIElement, from this other elements can be extended ---
 class UIElement {
@@ -31,9 +31,11 @@ class UIElement {
         this.parent = parent;
         this.parentAnchor = parentAnchor;
         this.selfAnchor = selfAnchor;
-
+        
         this.width = width;
         this.height = height;
+
+        this._selfPositioned = true;
 
         // Spawn the entity
         this.entity = game.spawnEntity(name); // prefixed from UIManager
@@ -73,9 +75,11 @@ class UIElement {
     }
 
     calculateGlobalPos() {
+        if (!this._selfPositioned) return this._manualPos || [0, 0];
+    
         const parentPos = this.parent instanceof UIElement
             ? this.parent.calculateGlobalPos()
-            : [0, 0]; // If root (canvas), assume 0,0
+            : [0, 0];
     
         const pw = this.parent.width;
         const ph = this.parent.height;
@@ -87,6 +91,10 @@ class UIElement {
             parentPos[1] + parentOffset.y - selfOffset.y
         ];
     }
+    
+    setManualPosition(x, y) {
+        this._manualPos = [x, y];
+    }    
 }
 
 class UIText extends UIElement {
@@ -193,6 +201,88 @@ class UIText extends UIElement {
     }
 }
 
+class UIArray extends UIElement {
+    constructor(
+        name,
+        parent,
+        parentAnchor,
+        selfAnchor,
+        vertical = true,
+        align = "left", // "center", "right"
+        spacing = 5,
+        color = [0, 0, 0, 0.5],
+        zlayer = -1000
+    ) {
+        super(name, parent, parentAnchor, selfAnchor, color, 10, 10, zlayer);
+        this.vertical = vertical;
+        this.align = align;
+        this.spacing = spacing;
+        this.children = [];
+    }
+
+    addChild(child) {
+        this.children.push(child);
+        child._selfPositioned = false;
+        this._recalculateLayout();
+    }
+
+    _recalculateLayout() {
+        const isVertical = this.vertical;
+
+        // Step 1: Measure layout size
+        let totalMain = 0;
+        let maxCross = 0;
+
+        for (const child of this.children) {
+            const main = isVertical ? child.height : child.width;
+            const cross = isVertical ? child.width : child.height;
+            totalMain += main + this.spacing;
+            maxCross = Math.max(maxCross, cross);
+        }
+
+        totalMain = Math.max(0, totalMain - this.spacing); // remove trailing spacing
+
+        // Step 2: Resize this layout box
+        this.width = isVertical ? maxCross : totalMain;
+        this.height = isVertical ? totalMain : maxCross;
+        this.rectangle.scale = [this.width, this.height, 1];
+
+        // Step 3: Calculate global top-left of layout (based on self anchor)
+        const parentPos = this.parent instanceof UIElement
+            ? this.parent.calculateGlobalPos()
+            : [0, 0];
+
+        const parentOffset = this.getAnchorOffset(this.parentAnchor, this.parent.width, this.parent.height);
+        const selfOffset = this.getAnchorOffset(this.selfAnchor, this.width, this.height);
+        const topLeftOffset = this.getAnchorOffset("top-left", this.width, this.height);
+
+        const originX = parentPos[0] + parentOffset.x - selfOffset.x + topLeftOffset.x;
+        const originY = parentPos[1] + parentOffset.y - selfOffset.y + topLeftOffset.y;
+
+        // Step 4: Position each child
+        let offset = 0;
+        for (const child of this.children) {
+            const main = isVertical ? child.height : child.width;
+            const cross = isVertical ? child.width : child.height;
+
+            let crossOffset = 0;
+            if (this.align === "center") {
+                crossOffset = (isVertical ? this.width : this.height) / 2 - cross / 2;
+            } else if (this.align === "right") {
+                crossOffset = (isVertical ? this.width : this.height) - cross;
+            }
+
+            const x = isVertical ? originX + crossOffset : originX + offset;
+            const y = isVertical ? originY + offset : originY + crossOffset;
+
+            child.setManualPosition(x, y);
+            offset += main + this.spacing;
+        }
+    }
+}
+
+
+
 
 
 // --- How to manage this fucking elements? ---
@@ -208,6 +298,7 @@ class UIManager {
         return `ui-${this.indexCounter++}-${type}`;
     }
 
+    // spawn methods
     spawnElement(
         parent = game.canvas,
         parentAnchor = "mid-center",
@@ -238,6 +329,22 @@ class UIManager {
         return textElement;
     }    
 
+    spawnArray(
+        parent = game.canvas,
+        parentAnchor = "mid-center",
+        selfAnchor = "mid-center",
+        vertical = true,
+        align = "left", // or "center", "right"
+        spacing = 5,
+        color = [0.1, 0.1, 0.1, 0.4]
+    ) {
+        const name = this._generateName("array");
+        const array = new UIArray(name, parent, parentAnchor, selfAnchor, vertical, align, spacing, color);
+        this.elements.set(name, array);
+        return array;
+    }    
+
+    // other methods
     getElement(name) {
         return this.elements.get(name);
     }
@@ -270,9 +377,21 @@ export function initUI() {
 
     // UI Text
     UI.spawnText();
-    // nesting text
-    let root = UI.spawnElement(game.canvas, "mid-center", "mid-center", 200, 200, [0,0,0,0.9])
-    let title = UI.spawnText( root ,"top-left", "top-left", "title", 1, 150)
-    let gap = UI.spawnElement(title, "bot-left", "top-left", 0, 2)
-    let text = UI.spawnText( gap,"bot-left", "top-left", "Whats up my friend!! How you doing?", 0.4, 200)    
+
+
+    // Array layout example
+    let arr = UI.spawnArray(game.canvas, "mid-center", "mid-center", true, "left", 4, [0.1,0.2,0.1,0.8]);
+
+    let t0 = UI.spawnText(game.canvas, "top-center", "top-center", "Status", 1);
+    let t1 = UI.spawnText(game.canvas, "top-center", "top-center", "Health = 232", 0.5);
+    let t2 = UI.spawnText(game.canvas, "top-center", "top-center", "Stamina = 50", 0.5);
+    let t3 = UI.spawnText(game.canvas, "top-center", "top-center", "Ammo = 35", 0.5);
+
+    arr.addChild(t0);
+    arr.addChild(t1);
+    arr.addChild(t2);
+    arr.addChild(t3);
+
+  
+
 }
