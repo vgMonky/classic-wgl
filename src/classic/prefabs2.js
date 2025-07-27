@@ -252,17 +252,11 @@ class UIArray extends UIElement {
         this.height = isVertical ? totalMain : maxCross;
         this.rectangle.scale = [this.width, this.height, 1];
 
-        // Step 3: Calculate global top-left of layout (based on self anchor)
-        const parentPos = this.parent instanceof UIElement
-            ? this.parent.calculateGlobalPos()
-            : [0, 0];
-
-        const parentOffset = this.getAnchorOffset(this.parentAnchor, this.parent.width, this.parent.height);
-        const selfOffset = this.getAnchorOffset(this.selfAnchor, this.width, this.height);
+        // Step 3: Calculate top-left of self
+        let [originX, originY] = this.calculateGlobalPos();
         const topLeftOffset = this.getAnchorOffset("top-left", this.width, this.height);
-
-        const originX = parentPos[0] + parentOffset.x - selfOffset.x + topLeftOffset.x;
-        const originY = parentPos[1] + parentOffset.y - selfOffset.y + topLeftOffset.y;
+        originX -= topLeftOffset.x;
+        originY -= topLeftOffset.y;        
 
         // Step 4: Position each child
         let offset = 0;
@@ -389,11 +383,11 @@ export function initUI() {
     // ..
 
     // ## UI Array Examples
-    let arrRoot = UI.spawnElement(game.canvas, "mid-center", "mid-center", 30, 30)
+    let arrRoot = UI.spawnArray(game.canvas, "mid-center", "mid-center", true, "left", 20);
 
     // array layout vertical left
-    let arr = UI.spawnArray(arrRoot, "mid-right", "mid-left", true, "left", 4);
-    let t0 = UI.spawnText(game.canvas, "top-center", "top-center", "Status A", 1);
+    let arr = UI.spawnArray(arrRoot, "top-center", "bot-center", true, "left", 4);
+    let t0 = UI.spawnText(game.canvas, "top-center", "top-center", "Status A", 1.2, 350);
     let t1 = UI.spawnText(game.canvas, "top-center", "top-center", "Health = 232", 0.5);
     let t2 = UI.spawnText(game.canvas, "top-center", "top-center", "Stamina = 50", 0.5);
     let t3 = UI.spawnText(game.canvas, "top-center", "top-center", "Ammo = 35", 0.5);
@@ -401,16 +395,13 @@ export function initUI() {
     arr.addChild(t1);
     arr.addChild(t2);
     arr.addChild(t3);
-    
+    arrRoot.addChild(arr);
+
     // array layout vertical center
-    let arr2 = UI.spawnArray(arrRoot, "mid-left", "mid-right", true, "center", 4);
+    let arr2 = UI.spawnArray(arrRoot, "bot-center", "top-center", true, "center", 4);
     arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Status A", 1));
     arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Health = 232", 0.5));
     arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Stamina = 50", 0.5));
     arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Ammo = 35", 0.5));
-
-    // !!!NOTE: Fix array nesting not working properlly.
-
-  
-
+    arrRoot.addChild(arr2)
 }
