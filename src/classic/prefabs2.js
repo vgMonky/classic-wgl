@@ -16,17 +16,17 @@ import { Collider } from "/classic/collision.js";
 //     | 'bot-left' | 'bot-center' | 'bot-right';
 
 
-// --- Most basic UI class is UIElement, from this other elements can be extended ---
+// --- Most basic UI class is UIElement, from this other elements can be extended ...
 class UIElement {
     constructor(
-        name,
-        parent,
-        parentAnchor,
-        selfAnchor,
-        color,
-        width,
-        height,
-        zlayer
+        name, //: string
+        parent, //: UIElement | game.canvas
+        parentAnchor, //: Anchor
+        selfAnchor, //: Anchor
+        color, //: [n, n, n, n] -> number between 0-1
+        width, //: number -> pixels
+        height, //: nubmer -> pixels
+        zlayer //: number
     ) {
         this.parent = parent;
         this.parentAnchor = parentAnchor;
@@ -99,16 +99,16 @@ class UIElement {
 
 class UIText extends UIElement {
     constructor(
-        name,
-        parent,
-        parentAnchor,
-        selfAnchor,
-        text,
-        textScale,
-        maxWidth,
-        color,
-        bgColor,
-        zlayer
+        name, //: string
+        parent,  //: UIElement | game.canvas
+        parentAnchor,  //: Anchor
+        selfAnchor, //: Anchor 
+        text, //: string
+        textScale, //: number -> a multiplayer
+        maxWidth, //: number -> pixels
+        color, //: [n, n, n, n] -> number between 0-1
+        bgColor, //: [n, n, n, n] -> number between 0-1
+        zlayer //: number
     ) {
         const fontSize = [16, 16];
         const glyphSize = [32, 32];
@@ -201,17 +201,18 @@ class UIText extends UIElement {
     }
 }
 
+// --- There are also "container" elements that recalculate their children positions (check `_selfPositioned` flag in UIElement)
 class UIArray extends UIElement {
     constructor(
-        name,
-        parent,
-        parentAnchor,
-        selfAnchor,
-        vertical = true,
-        align = "left", // "center", "right"
-        spacing = 5,
-        color = [0, 0, 0, 0.5],
-        zlayer = -1000
+        name, //: string
+        parent, //: UIElement | game.canvas
+        parentAnchor, //: Anchor
+        selfAnchor, //: Anchor
+        vertical, //: bool
+        align, //: left" | "center" | "right"
+        spacing, //: number -> pixels
+        color, //: [n, n, n, n] -> number between 0-1
+        zlayer //: number
     ) {
         super(name, parent, parentAnchor, selfAnchor, color, 10, 10, zlayer);
         this.vertical = vertical;
@@ -289,17 +290,13 @@ class UIArray extends UIElement {
 
 
 
-// --- How to manage this fucking elements? ---
+// --- How to use thoes elements above? ---
 
 class UIManager {
     constructor(gameInstance) {
         this.game = gameInstance;
         this.elements = new Map(); // name -> UIElement
         this.indexCounter = 0;
-    }
-
-    _generateName(type = "element") {
-        return `ui-${this.indexCounter++}-${type}`;
     }
 
     // spawn methods
@@ -323,7 +320,7 @@ class UIManager {
         selfAnchor = "bot-center",
         text = "TEXT",
         textScale = 1,
-        maxWidth = 200,
+        maxWidth = 260,
         color = [0, 0.7, 0, 1],
         bgColor = [0, 0.1, 0, 1],
     ) {
@@ -340,15 +337,19 @@ class UIManager {
         vertical = true,
         align = "left", // or "center", "right"
         spacing = 5,
-        color = [0.1, 0.1, 0.1, 0.4]
+        color = [0.1, 0.2, 0.1, 0.8]
     ) {
         const name = this._generateName("array");
-        const array = new UIArray(name, parent, parentAnchor, selfAnchor, vertical, align, spacing, color);
+        const array = new UIArray(name, parent, parentAnchor, selfAnchor, vertical, align, spacing, color, -1000);
         this.elements.set(name, array);
         return array;
     }    
 
     // other methods
+    _generateName(type = "element") {
+        return `ui-${this.indexCounter++}-${type}`;
+    }
+
     getElement(name) {
         return this.elements.get(name);
     }
@@ -372,29 +373,43 @@ class UIManager {
 export function initUI() {
     let UI = new UIManager(game);
     
-    // UI Element
+    // ## UI Element
     UI.spawnElement(game.canvas, "top-left", "top-left")
     UI.spawnElement(game.canvas, "top-center", "top-center");
     // nesting elements
-    let parent = UI.spawnElement(game.canvas, "top-right", "top-right"); 
-    UI.spawnElement(parent, "bot-left", "mid-center");
+    let grandparent = UI.spawnElement(game.canvas, "top-right", "top-right"); 
+    let parent = UI.spawnElement(grandparent, "bot-left", "mid-center", 45, 45, [0, 0, 0.8, 1]);
+    let child = UI.spawnElement(parent, "bot-left", "mid-center", 15, 15, [0, 0.8, 0, 1]);
+    UI.spawnElement(child, "bot-left", "mid-center", 5, 5, [1, 0, 0, 1]);
 
-    // UI Text
+    // ## UI Text
     UI.spawnText();
 
+    // ## UI Btn
+    // ..
 
-    // Array layout example
-    let arr = UI.spawnArray(game.canvas, "mid-center", "mid-center", true, "left", 4, [0.1,0.2,0.1,0.8]);
+    // ## UI Array Examples
+    let arrRoot = UI.spawnElement(game.canvas, "mid-center", "mid-center", 30, 30)
 
-    let t0 = UI.spawnText(game.canvas, "top-center", "top-center", "Status", 1);
+    // array layout vertical left
+    let arr = UI.spawnArray(arrRoot, "mid-right", "mid-left", true, "left", 4);
+    let t0 = UI.spawnText(game.canvas, "top-center", "top-center", "Status A", 1);
     let t1 = UI.spawnText(game.canvas, "top-center", "top-center", "Health = 232", 0.5);
     let t2 = UI.spawnText(game.canvas, "top-center", "top-center", "Stamina = 50", 0.5);
     let t3 = UI.spawnText(game.canvas, "top-center", "top-center", "Ammo = 35", 0.5);
-
     arr.addChild(t0);
     arr.addChild(t1);
     arr.addChild(t2);
     arr.addChild(t3);
+    
+    // array layout vertical center
+    let arr2 = UI.spawnArray(arrRoot, "mid-left", "mid-right", true, "center", 4);
+    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Status A", 1));
+    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Health = 232", 0.5));
+    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Stamina = 50", 0.5));
+    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Ammo = 35", 0.5));
+
+    // !!!NOTE: Fix array nesting not working properlly.
 
   
 
