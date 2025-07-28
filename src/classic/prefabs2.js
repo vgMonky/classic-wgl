@@ -16,7 +16,9 @@ import { Collider } from "/classic/collision.js";
 //     | 'bot-left' | 'bot-center' | 'bot-right';
 
 
-// --- Most basic UI class is UIElement, from this other elements can be extended ...
+// --- Most basic UI class  of the system is UIElement,
+//     from this other elements can be extended ---
+
 class UIElement {
     constructor(
         name, //: string
@@ -102,7 +104,7 @@ class UIElement {
         this.selfAnchor = selfAnchor
     }
 }
-
+ 
 class UIText extends UIElement {
     constructor(
         name, //: string
@@ -206,8 +208,21 @@ class UIText extends UIElement {
         }
     }
 }
+// class UISprite ...
 
-// --- There are also "container" elements that recalculate their children positions (check `_selfPositioned` flag in UIElement)
+// class UIBtnText ...
+
+// class UIBtnSprite ...
+
+
+// --- There are also "container elements" that recalculate their
+//     children screen position based on some parameters
+//     and logics, tho this desactivates the childrens automatic
+//     self-positioning (check `_selfPositioned` flag in UIElement) ---
+
+// UIArray: Container element that positions its children based
+//          on an array layout rule, and it adquires the width and 
+//          height of the total size of its children and gaps
 class UIArray extends UIElement {
     constructor(
         name, //: string
@@ -286,12 +301,15 @@ class UIArray extends UIElement {
     }
 }
 
+// UIPadding: Container element that repositions its children in the global pos
+//            considering a padding size for each side.
+
+// UIPanel: Container element that repositions its children in the global pos
+//          based on its own position, but cuts the inside content if it excedees
+//          its width or heigth, making it discoverable with a scroll bar.
 
 
-
-
-// --- How to use thoes elements above? ---
-
+// --- How to use all this elements above? ---
 class UIManager {
     constructor(gameInstance) {
         this.game = gameInstance;
@@ -315,7 +333,7 @@ class UIManager {
     }
 
     spawnText(
-        text = "TEXT",
+        text = "Text",
         textScale = 1,
         maxWidth = 260,
         color = [0, 0.7, 0, 1],
@@ -369,25 +387,26 @@ export function initUI() {
     
     // ## UI Element
     UI.spawnElement() // spawns default box at the center of the canvas
-    UI.spawnElement(300, 30, [1, 1, 1, 1], game.canvas, "top-center", "top-center"); // or with specified args
-    // setting anchor reference dynamically with `setAnchor`:
-    let box = UI.spawnElement() // default spawn
-    box.setAnchor(game.canvas, "mid-right", "mid-right") // now box is in the right of the canvas
+     // or with specified args...
+    UI.spawnElement(300, 30, [1, 1, 1, 1], game.canvas, "top-center", "top-center");
+    // setting anchor reference dynamically with `setAnchor()`:
+    let box = UI.spawnElement() // default box
+    box.setAnchor(game.canvas, "mid-right", "mid-right") // now box is in the right of the game.canvas
 
     // ## UI Text
-    UI.spawnText("main text");
-    UI.spawnText("second text", 0.4, 100).setAnchor(box, "top-left", "top-left");
+    UI.spawnText("hello text");
+    // ...or
+    UI.spawnText("second text", 0.4, 100, [0,0,1,1], [1,1,1,0.0]).setAnchor(box, "top-left", "top-left");
 
     // ## UI Array Examples
-    // array vertical left
+    // array vertical center
     let arr = UI.spawnArray(true, "center", 4);
-    arr.setAnchor(game.canvas, "bot-center", "bot-center")
     arr.addChild(UI.spawnText("Status A", 1, 350));
     arr.addChild(UI.spawnText("Health = 232", 0.5));
     arr.addChild(UI.spawnText("Stamina = 50", 0.5));
     arr.addChild(UI.spawnText("Ammo = 35", 0.5));
     // array horizontal
-    let arr2 = UI.spawnArray(false, "center", 8)
+    let arr2 = UI.spawnArray(false, "center", 8, [1,0,0,0.1]) // color red
     arr2.addChild(UI.spawnElement(30, 30))
     arr2.addChild(UI.spawnElement(30, 30))
     arr2.addChild(UI.spawnElement(30, 30))
@@ -395,7 +414,9 @@ export function initUI() {
     arr2.addChild(UI.spawnElement(30, 30))
     arr2.addChild(UI.spawnElement(50, 50))
     arr2.addChild(UI.spawnElement(30, 30))
-    arr2.setAnchor(arr, "top-center", "bot-center")
-
-
+    // ... it works recursively, meaning you can nest more than one array
+    let parentArray = UI.spawnArray(true, "center", 10, [0,0,0,0]) // transparent
+    parentArray.addChild(arr)
+    parentArray.addChild(arr2)
+    parentArray.setAnchor(game.canvas, "bot-center", "bot-center")
 }
