@@ -94,7 +94,13 @@ class UIElement {
     
     setManualPosition(x, y) {
         this._manualPos = [x, y];
-    }    
+    }
+
+    setAnchor(parent, parentAnchor, selfAnchor) {
+        this.parent = parent
+        this.parentAnchor = parentAnchor
+        this.selfAnchor = selfAnchor
+    }
 }
 
 class UIText extends UIElement {
@@ -295,12 +301,12 @@ class UIManager {
 
     // spawn methods
     spawnElement(
+        width = 100,
+        height = 100,
+        color = [1, 1, 1, 0.1],
         parent = game.canvas,
         parentAnchor = "mid-center",
         selfAnchor = "mid-center",
-        width = 100,
-        height = 100,
-        color = [1, 1, 1, 0.1]
     ) {
         const name = this._generateName("element");
         const element = new UIElement(name, parent, parentAnchor, selfAnchor, color, width, height, -1000);
@@ -309,9 +315,6 @@ class UIManager {
     }
 
     spawnText(
-        parent = game.canvas,
-        parentAnchor = "bot-center",
-        selfAnchor = "bot-center",
         text = "TEXT",
         textScale = 1,
         maxWidth = 260,
@@ -319,22 +322,19 @@ class UIManager {
         bgColor = [0, 0.1, 0, 1],
     ) {
         const name = this._generateName("text");
-        const textElement = new UIText(name, parent, parentAnchor, selfAnchor, text, textScale, maxWidth, color, bgColor, -1000);
+        const textElement = new UIText(name, game.canvas, "mid-center", "mid-center", text, textScale, maxWidth, color, bgColor, -1000);
         this.elements.set(name, textElement);
         return textElement;
     }    
 
     spawnArray(
-        parent = game.canvas,
-        parentAnchor = "mid-center",
-        selfAnchor = "mid-center",
         vertical = true,
         align = "left", // or "center", "right"
         spacing = 5,
-        color = [0.1, 0.2, 0.1, 0.8]
+        color = [0.1, 0.2, 0.1, 0.8],
     ) {
         const name = this._generateName("array");
-        const array = new UIArray(name, parent, parentAnchor, selfAnchor, vertical, align, spacing, color, -1000);
+        const array = new UIArray(name, game.canvas, "mid-center", "mid-center", vertical, align, spacing, color, -1000);
         this.elements.set(name, array);
         return array;
     }    
@@ -368,40 +368,34 @@ export function initUI() {
     let UI = new UIManager(game);
     
     // ## UI Element
-    UI.spawnElement(game.canvas, "top-left", "top-left")
-    UI.spawnElement(game.canvas, "top-center", "top-center");
-    // nesting elements
-    let grandparent = UI.spawnElement(game.canvas, "top-right", "top-right"); 
-    let parent = UI.spawnElement(grandparent, "bot-left", "mid-center", 45, 45, [0, 0, 0.8, 1]);
-    let child = UI.spawnElement(parent, "bot-left", "mid-center", 15, 15, [0, 0.8, 0, 1]);
-    UI.spawnElement(child, "bot-left", "mid-center", 5, 5, [1, 0, 0, 1]);
+    UI.spawnElement() // spawns default box at the center of the canvas
+    UI.spawnElement(300, 30, [1, 1, 1, 1], game.canvas, "top-center", "top-center"); // or with specified args
+    // setting anchor reference dynamically with `setAnchor`:
+    let box = UI.spawnElement() // default spawn
+    box.setAnchor(game.canvas, "mid-right", "mid-right") // now box is in the right of the canvas
 
     // ## UI Text
-    UI.spawnText();
-
-    // ## UI Btn
-    // ..
+    UI.spawnText("main text");
+    UI.spawnText("second text", 0.4, 100).setAnchor(box, "top-left", "top-left");
 
     // ## UI Array Examples
-    let arrRoot = UI.spawnArray(game.canvas, "mid-center", "mid-center", true, "left", 20);
+    // array vertical left
+    let arr = UI.spawnArray(true, "center", 4);
+    arr.setAnchor(game.canvas, "bot-center", "bot-center")
+    arr.addChild(UI.spawnText("Status A", 1, 350));
+    arr.addChild(UI.spawnText("Health = 232", 0.5));
+    arr.addChild(UI.spawnText("Stamina = 50", 0.5));
+    arr.addChild(UI.spawnText("Ammo = 35", 0.5));
+    // array horizontal
+    let arr2 = UI.spawnArray(false, "center", 8)
+    arr2.addChild(UI.spawnElement(30, 30))
+    arr2.addChild(UI.spawnElement(30, 30))
+    arr2.addChild(UI.spawnElement(30, 30))
+    arr2.addChild(UI.spawnElement(30, 30))
+    arr2.addChild(UI.spawnElement(30, 30))
+    arr2.addChild(UI.spawnElement(50, 50))
+    arr2.addChild(UI.spawnElement(30, 30))
+    arr2.setAnchor(arr, "top-center", "bot-center")
 
-    // array layout vertical left
-    let arr = UI.spawnArray(arrRoot, "top-center", "bot-center", true, "left", 4);
-    let t0 = UI.spawnText(game.canvas, "top-center", "top-center", "Status A", 1.2, 350);
-    let t1 = UI.spawnText(game.canvas, "top-center", "top-center", "Health = 232", 0.5);
-    let t2 = UI.spawnText(game.canvas, "top-center", "top-center", "Stamina = 50", 0.5);
-    let t3 = UI.spawnText(game.canvas, "top-center", "top-center", "Ammo = 35", 0.5);
-    arr.addChild(t0);
-    arr.addChild(t1);
-    arr.addChild(t2);
-    arr.addChild(t3);
-    arrRoot.addChild(arr);
 
-    // array layout vertical center
-    let arr2 = UI.spawnArray(arrRoot, "bot-center", "top-center", true, "center", 4);
-    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Status A", 1));
-    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Health = 232", 0.5));
-    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Stamina = 50", 0.5));
-    arr2.addChild(UI.spawnText(game.canvas, "top-center", "top-center", "Ammo = 35", 0.5));
-    arrRoot.addChild(arr2)
 }
