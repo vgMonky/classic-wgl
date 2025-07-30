@@ -47,7 +47,7 @@ class UIElement {
         this.position = [x, y];
         this.rectangle.position = [x, y, this.rectangle.position[2]];
         
-        // if its a layout container...
+        // if its a layout container set recursive...
         if (typeof this.setChildrenPos === "function") {
             this.setChildrenPos();
         }
@@ -57,6 +57,7 @@ class UIElement {
     setSize(width, height) {
         this.width = width;
         this.height = height;
+        this.rectangle.scale = [this.width, this.height, 1]
     }
   
 }
@@ -334,7 +335,7 @@ class UIManager {
     spawnPanel(
         width = 300,
         height = 200,
-        color = [0.2, 0.2, 0.8, 1],
+        color = [0.06, 0.15, 0.06, 1],
     ) {
         const name = this._generateName("panel");
         const panel = new UIPanel(name, color, width, height, -1000);
@@ -396,23 +397,42 @@ class UIManager {
 export function initUI() {
     let UI = new UIManager(game);
 
-    UI.spawnPanel(game.canvas.width, game.canvas.height / 2, [0.2, 0.2, 0.8, 1])
-        .setPosition(10, 10)
+    let root = UI.spawnPanel(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.8])
+
+    root.entity.registerCall("refreshUI", () => {
+        root.setSize(game.canvas.width, game.canvas.height)
+    });
+
+
+    // items component
+    let s = 40
+    let menu = UI.spawnArray(false, "center", 9, [0,0.2,0,0])
+        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("1",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("2",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("3",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnPanel(s+15, s+15).addChild(UI.spawnText("4",0.8, 50, [1,1,1,1])))
+        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("5",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("6",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("7",0.5, 50, [1,1,1,1])))
+    root.addChild(menu, "bot-center", "bot-center")
+
+    // game over component
+    let gameover = UI.spawnArray(true, "center", 12, [0,0.1,0,1])
+        .addChild(UI.spawnElement(250,20,[0,0.1,0,1]))
+        .addChild(UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1]))
+        .addChild(UI.spawnText("start again", 0.5, 200, [1,1,1,1], [0,0.3,0,1]))
+        .addChild(UI.spawnElement(250,12,[0,0.1,0,1]))
+    root.addChild(gameover, "mid-center", "mid-center")
+
+    // minimap component
+    let minimap = UI.spawnPanel(200, 200)
         .addChild(
-            UI.spawnPanel(200, 200, [1, 1, 1, 1])
-                .addChild(
-                    UI.spawnArray(true, "left", 10, [0.2, 0.5, 0.2, 0.5])
-                        .addChild(UI.spawnElement(50, 50, [1, 0, 0, 1]))
-                        .addChild(UI.spawnElement(60, 60, [0, 1, 0, 1]))
-                        .addChild(UI.spawnElement(30, 30, [1, 1, 0, 1])),
-                    "top-left", "top-left"
-                )
-                .addChild(
-                    UI.spawnText("hello"),
-                    "bot-center", "top-center"
-                ),
-            "bot-center", "mid-center"
-        );
+            UI.spawnText("mini map", 0.4, 200, [1,1,1,1], [0,0,0,0])
+        )
+    root.addChild(minimap,"top-right", "top-right")
+
+
+
 }
 
 
