@@ -178,6 +178,8 @@ class UIText extends UIElement {
 //     and logics, tho this desactivates the childrens automatic
 //     self-positioning (check `_selfPositioned` flag in UIElement) ---
 
+// UIPanel: Container element that repositions its children in the global pos
+//          based on its own position, a self anchor, and a child anchor.
 class UIPanel extends UIElement {
     constructor(
         name, //: string
@@ -308,8 +310,6 @@ class UIArray extends UIElement {
 // UIPadding: Container element that repositions its children in the global pos
 //            considering a padding size for each side.
 
-// UIPanel: Container element that repositions its children in the global pos
-//          based on its own position, a self anchor, and a child anchor.
 
 
 // --- How to use all this elements above? ---
@@ -397,6 +397,8 @@ class UIManager {
 export function initUI() {
     let UI = new UIManager(game);
 
+    // root element, UI manager should internally set this maybe?
+    // for sure it will allways be necesarry because only parents can calculate elements position
     let root = UI.spawnPanel(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.8])
 
     root.entity.registerCall("refreshUI", () => {
@@ -431,6 +433,9 @@ export function initUI() {
         )
     root.addChild(minimap,"top-right", "top-right")
 
+    // fps counter
+    let fpsC = UI.spawnText("fps", 0.8, 100)
+    //fpsC.setText("98") not working properlly
 
 
 }
