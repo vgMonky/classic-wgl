@@ -16,8 +16,7 @@ import { Collider } from "/classic/collision.js";
 
 // A UIElement is just an entity with a rectangle component,
 // its just an object that ocupies some space in the screen
-// *extract parent anchoring to UIPanael
-class UIElement {
+ class UIElement {
     constructor(
         name, //: string
         color, //: [n, n, n, n] -> number between 0-1
@@ -175,8 +174,7 @@ class UIText extends UIElement {
 
 // --- There are also "container elements" that recalculate their
 //     children screen position based on some parameters
-//     and logics, tho this desactivates the childrens automatic
-//     self-positioning (check `_selfPositioned` flag in UIElement) ---
+//     and logics ---
 
 // UIPanel: Container element that repositions its children in the global pos
 //          based on its own position, a self anchor, and a child anchor.
