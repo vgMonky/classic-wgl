@@ -2,7 +2,7 @@ The layout system is desing to be used in a specific way: you allways have to us
 
 `container-elements` act as parent elements that will calculate and place their inner children content, most probably thoes children are also other `container-elements` with their own content, but there are also other non-container elements like text and sprite.
 
-`UIPanel`: Container element that repositions its children in the global pos
+`UIAnchor`: Container element that repositions its children in the global pos
            based on its own position, a self anchor, and a child anchor.
 
 `UIArray`: Container element that positions its children based

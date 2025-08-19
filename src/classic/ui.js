@@ -90,7 +90,6 @@ class UIText extends UIElement {
         const autoWidth = scaledGlyphSize[0] * maxLineLength;
         const autoHeight = scaledGlyphSize[1] * lineCount;
 
-        // Now we can safely call super
         super(name, bgColor, autoWidth, autoHeight, zlayer);
 
         // Assign the rest
@@ -184,9 +183,9 @@ class UIText extends UIElement {
 //     children screen position based on some parameters
 //     and logics ---
 
-// UIPanel: Container element that repositions its children in the global pos
+// UIAnchor: Container element that repositions its children in the global pos
 //          based on its own position, a self anchor, and a child anchor.
-class UIPanel extends UIElement {
+class UIAnchor extends UIElement {
     constructor(
         name, //: string
         color, //: [n, n, n, n] -> number between 0-1
@@ -237,8 +236,6 @@ class UIPanel extends UIElement {
         }
     }
 }
-
-
 
 // UIArray: Container element that positions its children based
 //          on an array layout rule, and it adquires the width and 
@@ -316,6 +313,9 @@ class UIArray extends UIElement {
 // UIPadding: Container element that repositions its children in the global pos
 //            considering a padding size for each side.
 
+// UIPanel: Container element that has a specific size, making the inner content
+//          only render what fits in the panel. It should also include scroll
+//          behaiviour and scroll bar. 
 
 
 // --- How to use all this elements above? ---
@@ -336,17 +336,6 @@ class UIManager {
         const element = new UIElement(name, color, width, height, -1000);
         this.elements.set(name, element);
         return element;
-    }
-
-    spawnPanel(
-        width = 300,
-        height = 200,
-        color = [0.06, 0.15, 0.06, 1],
-    ) {
-        const name = this._generateName("panel");
-        const panel = new UIPanel(name, color, width, height, -1000);
-        this.elements.set(name, panel);
-        return panel;
     }
 
     spawnText(
@@ -372,6 +361,17 @@ class UIManager {
         const array = new UIArray(name, vertical, align, spacing, color, -1000);
         this.elements.set(name, array);
         return array;
+    }
+
+    spawnAnchor(
+        width = 300,
+        height = 200,
+        color = [0.06, 0.15, 0.06, 1],
+    ) {
+        const name = this._generateName("panel");
+        const panel = new UIAnchor(name, color, width, height, -1000);
+        this.elements.set(name, panel);
+        return panel;
     }
     
 
@@ -405,7 +405,7 @@ export function initUI() {
 
     // root element, UI manager should internally set this maybe?
     // for sure it will allways be necesarry because only parents can calculate elements position
-    let root = UI.spawnPanel(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.8])
+    let root = UI.spawnAnchor(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.8])
 
     root.entity.registerCall("refreshUI", () => {
         root.setSize(game.canvas.width, game.canvas.height)
@@ -415,31 +415,30 @@ export function initUI() {
     // items component
     let s = 40
     let menu = UI.spawnArray(false, "center", 9, [0,0.2,0,0])
-        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("1",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("2",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("3",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnPanel(s+15, s+15).addChild(UI.spawnText("4",0.8, 50, [1,1,1,1])))
-        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("5",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("6",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnPanel(s, s).addChild(UI.spawnText("7",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("1",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("2",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("3",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s+15, s+15).addChild(UI.spawnText("4",0.8, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("5",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("6",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("7",0.5, 50, [1,1,1,1])))
     root.addChild(menu, "bot-center", "bot-center")
 
     // game over component
+    // we need padding container here!!!
     let gameover = UI.spawnArray(true, "center", 12, [0,0.1,0,1])
-        .addChild(UI.spawnElement(250,20,[0,0.1,0,1]))
         .addChild(UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1]))
         .addChild(UI.spawnText("start again", 0.5, 200, [1,1,1,1], [0,0.3,0,1]))
-        .addChild(UI.spawnElement(250,12,[0,0.1,0,1]))
     root.addChild(gameover, "mid-center", "mid-center")
 
     // minimap component
-    let minimap = UI.spawnPanel(200, 200)
+    let minimap = UI.spawnAnchor(200, 200, [0,0.1,0,0.9])
         .addChild(
-            UI.spawnText("mini map", 0.4, 200, [1,1,1,1], [0,0,0,0])
+            UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [1,1,1,1], [0,0,0,0])
         )
     root.addChild(minimap,"top-right", "top-right")
 
-    // fps counter
+    // fps counter component
     let fpsC = UI.spawnText("fps", 0.8, 100);
     let lastFPS = 0;
     let timeAccumulator = 0;
@@ -451,7 +450,6 @@ export function initUI() {
             timeAccumulator = 0;
         }
     });
-
 
 }
 
