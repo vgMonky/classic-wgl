@@ -130,34 +130,42 @@ class UIText extends UIElement {
     }
 
     setText(str) {
-        for (let comp of this.textComps) {
+        const lines = UIText.wrapText(str, this.maxCharPerLine);
+    
+        // If we have fewer lines now, remove the extra components
+        while (this.textComps.length > lines.length) {
+            const comp = this.textComps.pop();
             this.entity.removeComponent(comp);
         }
-        this.textComps = [];
-
-        const lines = UIText.wrapText(str, this.maxCharPerLine);
-        const lineHeight = this.glyphSize[1] * this.textScale;
-
+    
+        // Update existing components and add new ones if needed
         for (let i = 0; i < lines.length; i++) {
-            const textComp = this.entity.addComponent(
-                Text,
-                [0, 0, this.rectangle.position[2]], // position will be updated in refresh
-                [this.textScale, this.textScale, 1],
-                "font",
-                [lines[i].length, 1],
-                this.fontSize,
-                this.glyphSize,
-                this.glyphStr,
-                this.color,
-                [0, 0, 0, 0],
-                true
-            );
-            textComp.setText(lines[i].toUpperCase());
-            this.textComps.push(textComp);
+            if (this.textComps[i]) {
+                // Just update the text of the existing component
+                this.textComps[i].setText(lines[i].toUpperCase());
+            } else {
+                // Create new component if not enough
+                const textComp = this.entity.addComponent(
+                    Text,
+                    [0, 0, this.rectangle.position[2]], // position will be updated in refresh
+                    [this.textScale, this.textScale, 1],
+                    "font",
+                    [lines[i].length, 1],
+                    this.fontSize,
+                    this.glyphSize,
+                    this.glyphStr,
+                    this.color,
+                    [0, 0, 0, 0],
+                    true
+                );
+                textComp.setText(lines[i].toUpperCase());
+                this.textComps.push(textComp);
+            }
         }
-
+    
         this._refreshPositions();
     }
+    
 
     _refreshPositions() {
         const [x, y] = this.position;
@@ -432,8 +440,17 @@ export function initUI() {
     root.addChild(minimap,"top-right", "top-right")
 
     // fps counter
-    let fpsC = UI.spawnText("fps", 0.8, 100)
-    //fpsC.setText("98") not working properlly
+    let fpsC = UI.spawnText("fps", 0.8, 100);
+    let lastFPS = 0;
+    let timeAccumulator = 0;
+    fpsC.entity.registerCall("refreshUI", () => {
+        timeAccumulator += game.deltaTime;
+        if (timeAccumulator >= 0.1) {
+            lastFPS = game.fps;
+            fpsC.setText(lastFPS.toString());
+            timeAccumulator = 0;
+        }
+    });
 
 
 }
