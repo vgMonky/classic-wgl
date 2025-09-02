@@ -1,15 +1,8 @@
 import game from "/classic/state.js";
-import { Rectangle, Text } from "/classic/transforms.js";
-import { Collider } from "/classic/collision.js";
+import { Rectangle, Text, Sprite } from "/classic/transforms.js";
 
-// // Objective: Final API based on UIManager class
-// ...
-
-// type Anchor =
-//     | 'top-left' | 'top-center' | 'top-right'
-//     | 'mid-left' | 'mid-center' | 'mid-right'
-//     | 'bot-left' | 'bot-center' | 'bot-right';
-
+// // Objective: Final API based on UIManager class,
+// after having basic elements and layout system, create various components as examples 
 
 // --- Most basic UI class  of the system is UIElement,
 //     from this other elements can be extended ---
@@ -64,13 +57,13 @@ import { Collider } from "/classic/collision.js";
  
 class UIText extends UIElement {
     constructor(
-        name,
-        text,
-        textScale,
-        maxWidth,
+        name, //: string
+        text, //: string
+        textScale, //: number
+        maxWidth, //: number
         color, //: [r, g, b, a]
         bgColor, //: [r, g, b, a]
-        zlayer
+        zlayer //: number
     ) {
         // Setup font and sizing before calling super
         const fontSize = [16, 16];
@@ -177,12 +170,67 @@ class UIText extends UIElement {
     }
 }
 
-// class UISprite ...
+class UISprite extends UIElement {
+    constructor(
+        name,
+        texture,       // string name from manifest.json
+        width,         // pixels
+        height,        // pixels
+        frame,     // sprite sheet frame
+        tileSetSize, // tiles in texture
+        anchor,
+        zlayer
+    ) {
+        // Use a transparent rectangle as base
+        super(name, [0,0,0,0], width, height, zlayer);
+
+        // Add Sprite component
+        this.spriteComp = this.entity.addComponent(
+            Sprite,
+            [this.position[0], this.position[1], zlayer],
+            [width / 64, height / 64, 1], // scale in terms of pixels / texture? adjust if needed
+            texture,
+            true,             // ignoreCam → screen-space
+            frame,
+            tileSetSize,
+            anchor
+        );
+
+        // Optional: update position on refresh
+        this.entity.registerCall("refreshUI", () => {
+            this._refreshPosition();
+        });
+    }
+
+    _refreshPosition() {
+        const [x, y] = this.position;
+        this.spriteComp.position = [x, y, this.spriteComp.position[2]];
+    }
+
+    setPosition(x, y) {
+        super.setPosition(x, y);
+        this._refreshPosition();
+        return this;
+    }
+
+    setSize(width, height) {
+        super.setSize(width, height);
+        // Update scale accordingly
+        this.spriteComp.scale = [width / 64, height / 64, 1]; // adjust 64 if needed
+        return this;
+    }
+
+    setFrame(frame) {
+        this.spriteComp.frame = frame;
+        return this;
+    }
+}
 
 
 // --- There are also "container elements" that recalculate their
 //     children screen position based on some parameters
 //     and logics ---
+//     Should we create a base class ContainerElement extending UIElement ???
 
 // UIAnchor: Container element that repositions its children in the global pos
 //          based on its own position, a self anchor, and a child anchor.
@@ -414,6 +462,20 @@ class UIManager {
         return textElement;
     }    
 
+    spawnSprite(
+        texture = "editorIcons",   // texture name from manifest.json
+        width = 64,                // width in pixels
+        height = 64,               // height in pixels
+        frame = 0,                 // sprite sheet frame
+        tileSetSize = [1, 1],      // tiles in texture
+        anchor = [0.5, 0.5]        // pivot point
+    ) {
+        const name = this._generateName("sprite");
+        const sprite = new UISprite(name, texture, width, height, frame, tileSetSize, anchor, this.zlayer);
+        this.elements.set(name, sprite);
+        return sprite;
+    }    
+
     spawnArray(
         vertical = true,
         align = "left", // or "center", "right"
@@ -488,33 +550,35 @@ export function initUI() {
     // items component
     let s = 40
     let menu = UI.spawnArray(false, "center", 9, [0,0.2,0,0])
-        .addChild(
-            UI.spawnAnchor(s, s).addChild(
-                UI.spawnText("1",0.5, 50, [1,1,1,1])
-            ))
-        .addChild(
-            UI.spawnAnchor(s, s).addChild(
-                UI.spawnText("2",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("3",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s+15, s+15).addChild(UI.spawnText("4",0.8, 500, [1,1,1,1]).setText("u")))
+        .addChild(UI.spawnAnchor(s, s)
+            .addChild(UI.spawnText("1",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s)
+            .addChild(UI.spawnText("2",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s, s)
+            .addChild(UI.spawnText("3",0.5, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s+15, s+15)
+            .addChild(UI.spawnText("4",0.8, 500, [1,1,1,1])
+                .setText("u")))
         .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("5",0.5, 50, [1,1,1,1])))
         .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("6",0.5, 50, [1,1,1,1])))
         .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("7",0.5, 50, [1,1,1,1])))
     root.addChild(menu, "bot-center", "bot-center")
 
     // game over component
-    let pad = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1]);
-    let gameover = UI.spawnArray(true, "center", 12, [0,0,0,0])
-        .addChild(UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1]))
-        .addChild(UI.spawnText("start again", 0.5, 200, undefined, [0,0.3,0,0.05]));
-
-    pad.addChild(gameover);
-    root.addChild(pad, "mid-center", "mid-center");
+    let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
+        .addChild(UI.spawnArray(true, "center", 12, [0,0,0,0])
+            .addChild(UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1]))
+            .addChild(UI.spawnText("start again", 0.5, 200, undefined, [0,0.3,0,0.05]))
+        )
+    root.addChild(gameover, "mid-center", "mid-center");
 
     // minimap component
-    let minimap = UI.spawnAnchor(200, 200, [0,0.1,0,0.9])
-        .addChild(
-            UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [1,1,1,1], [0,0,0,0])
+    let minimap = UI.spawnPadding([10,10,10,10], [0,0.1,0,0.9])
+        .addChild(UI.spawnAnchor(200, 200, [0,0,0,0])
+            .addChild(
+                UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [1,1,1,1], [0,0,0,0]),
+                "bot-left", "bot-left"
+            )
         )
     root.addChild(minimap,"top-right", "top-right")
 
@@ -532,16 +596,9 @@ export function initUI() {
     });
 
 
-
-}
-
-
-
-// examples:
-export function initTut() {
-
-}
-
-export function initMenu() {
+    // sprite test
+    let mySprite = UI.spawnSprite("editorIcons", 30, 30, 2, [4, 4]);
+    mySprite.setPosition(game.canvas.width/2, game.canvas.height/4);
+    
 
 }

@@ -228,11 +228,7 @@ class Sprite extends Drawable {
 };
 
 
-class Text extends Drawable {
-    // TEXT HERE IS CREATING A BACKGROUND?
-    // maybe it should simplified to just create the text,
-    // this way we let the UI "wrapper" system create its
-    // own UIText with a Rectangle component as a background  
+class Text extends Drawable { 
     constructor(
         entity,
         position, scale, textureFont,

@@ -12,7 +12,7 @@ import {
     initAgent,
     initDEVButtons
 } from "./prefabs.js";
-import { initUI, initTut, initMenu } from "./ui.js";
+import { initUI } from "./ui.js";
 
 
 async function initContext() {
@@ -39,8 +39,6 @@ async function initContext() {
 
     // UI system example
     initUI();
-    //initTut();
-    //initMenu();
 
     game.camera.position[0] += 800;
 
