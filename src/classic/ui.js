@@ -19,7 +19,7 @@ import { Collider } from "/classic/collision.js";
  class UIElement {
     constructor(
         name, //: string
-        color, //: [n, n, n, n] -> number between 0-1
+        color, //: [r, g, b, a] -> number between 0-1
         width, //: number -> pixels
         height, //: nubmer -> pixels
         zlayer //: number
@@ -68,8 +68,8 @@ class UIText extends UIElement {
         text,
         textScale,
         maxWidth,
-        color,
-        bgColor,
+        color, //: [r, g, b, a]
+        bgColor, //: [r, g, b, a]
         zlayer
     ) {
         // Setup font and sizing before calling super
@@ -163,6 +163,7 @@ class UIText extends UIElement {
         }
     
         this._refreshPositions();
+        return this
     }
     
 
@@ -246,7 +247,7 @@ class UIArray extends UIElement {
         vertical, //: bool
         align, //: left" | "center" | "right"
         spacing, //: number -> pixels
-        color, //: [n, n, n, n] -> number between 0-1
+        color, //: [r, g, b, a] -> number between 0-1
         zlayer //: number
     ) {
         super(name, color, 10, 10, zlayer);
@@ -310,8 +311,69 @@ class UIArray extends UIElement {
     }    
 }
 
-// UIPadding: Container element that repositions its children in the global pos
+// UIPadding: Container element that repositions its child
 //            considering a padding size for each side.
+class UIPadding extends UIElement {
+    constructor(
+        name, //: string
+        padding, //: [top, right, bottom, left]
+        color, //: [r, g, b, a]
+        zlayer, //: number
+    ) {
+        // Start with dummy size; will be recalculated later
+        super(name, color, 10, 10, zlayer);
+
+        this.padding = padding;
+        this.child = null;
+
+        this.entity.registerCall("refreshUI", () => {
+            this.setChildrenPos();
+        });
+    }
+
+    addChild(child) {
+        if (this.child) {
+            throw new Error("UIPadding can only have one child!");
+        }
+        this.child = child;
+        this.setChildrenPos();
+        return this;
+    }
+
+    setPadding(padding) {
+        this.padding = padding;
+        this.setChildrenPos();
+        return this;
+    }
+
+    setChildrenPos() {
+        if (!this.child) return;
+
+        const [top, right, bottom, left] = this.padding;
+
+        // Recalculate self size: child size + padding
+        this.width = this.child.width + left + right;
+        this.height = this.child.height + top + bottom;
+        this.rectangle.scale = [this.width, this.height, 1];
+
+        // Reposition child inside
+        const [x, y] = this.position;
+        const childX = x + left;
+        const childY = y + top;
+        this.child.setPosition(childX, childY);
+    }
+
+    setPosition(x, y) {
+        this.position = [x, y];
+        this.rectangle.position = [x, y, this.rectangle.position[2]];
+
+        // Update child pos too
+        this.setChildrenPos();
+        return this;
+    }
+}
+
+
 
 // UIPanel: Container element that has a specific size, making the inner content
 //          only render what fits in the panel. It should also include scroll
@@ -324,6 +386,7 @@ class UIManager {
         this.game = gameInstance;
         this.elements = new Map(); // name -> UIElement
         this.indexCounter = 0;
+        this.zlayer = -1000;
     }
 
     // spawn methods
@@ -333,7 +396,7 @@ class UIManager {
         color = [1, 1, 1, 0.1],
     ) {
         const name = this._generateName("element");
-        const element = new UIElement(name, color, width, height, -1000);
+        const element = new UIElement(name, color, width, height, this.zlayer);
         this.elements.set(name, element);
         return element;
     }
@@ -346,7 +409,7 @@ class UIManager {
         bgColor = [0, 0.1, 0, 1],
     ) {
         const name = this._generateName("text");
-        const textElement = new UIText(name, text, textScale, maxWidth, color, bgColor, -1000);
+        const textElement = new UIText(name, text, textScale, maxWidth, color, bgColor, this.zlayer);
         this.elements.set(name, textElement);
         return textElement;
     }    
@@ -358,7 +421,7 @@ class UIManager {
         color = [0.1, 0.2, 0.1, 0.8],
     ) {
         const name = this._generateName("array");
-        const array = new UIArray(name, vertical, align, spacing, color, -1000);
+        const array = new UIArray(name, vertical, align, spacing, color, this.zlayer);
         this.elements.set(name, array);
         return array;
     }
@@ -369,9 +432,19 @@ class UIManager {
         color = [0.06, 0.15, 0.06, 1],
     ) {
         const name = this._generateName("panel");
-        const panel = new UIAnchor(name, color, width, height, -1000);
+        const panel = new UIAnchor(name, color, width, height, this.zlayer);
         this.elements.set(name, panel);
         return panel;
+    }
+
+    spawnPadding(
+        padding = [10, 10, 10, 10],
+        color = [0.1, 0.1, 0.1, 0.1],
+    ) {
+        const name = this._generateName("padding");
+        const pad = new UIPadding(name, padding, color, this.zlayer);
+        this.elements.set(name, pad);
+        return pad;
     }
     
 
@@ -405,7 +478,7 @@ export function initUI() {
 
     // root element, UI manager should internally set this maybe?
     // for sure it will allways be necesarry because only parents can calculate elements position
-    let root = UI.spawnAnchor(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.8])
+    let root = UI.spawnAnchor(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.7])
 
     root.entity.registerCall("refreshUI", () => {
         root.setSize(game.canvas.width, game.canvas.height)
@@ -415,21 +488,28 @@ export function initUI() {
     // items component
     let s = 40
     let menu = UI.spawnArray(false, "center", 9, [0,0.2,0,0])
-        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("1",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("2",0.5, 50, [1,1,1,1])))
+        .addChild(
+            UI.spawnAnchor(s, s).addChild(
+                UI.spawnText("1",0.5, 50, [1,1,1,1])
+            ))
+        .addChild(
+            UI.spawnAnchor(s, s).addChild(
+                UI.spawnText("2",0.5, 50, [1,1,1,1])))
         .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("3",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s+15, s+15).addChild(UI.spawnText("4",0.8, 50, [1,1,1,1])))
+        .addChild(UI.spawnAnchor(s+15, s+15).addChild(UI.spawnText("4",0.8, 500, [1,1,1,1]).setText("u")))
         .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("5",0.5, 50, [1,1,1,1])))
         .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("6",0.5, 50, [1,1,1,1])))
         .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("7",0.5, 50, [1,1,1,1])))
     root.addChild(menu, "bot-center", "bot-center")
 
     // game over component
-    // we need padding container here!!!
-    let gameover = UI.spawnArray(true, "center", 12, [0,0.1,0,1])
+    let pad = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1]);
+    let gameover = UI.spawnArray(true, "center", 12, [0,0,0,0])
         .addChild(UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1]))
-        .addChild(UI.spawnText("start again", 0.5, 200, [1,1,1,1], [0,0.3,0,1]))
-    root.addChild(gameover, "mid-center", "mid-center")
+        .addChild(UI.spawnText("start again", 0.5, 200, undefined, [0,0.3,0,0.05]));
+
+    pad.addChild(gameover);
+    root.addChild(pad, "mid-center", "mid-center");
 
     // minimap component
     let minimap = UI.spawnAnchor(200, 200, [0,0.1,0,0.9])
@@ -450,6 +530,8 @@ export function initUI() {
             timeAccumulator = 0;
         }
     });
+
+
 
 }
 
