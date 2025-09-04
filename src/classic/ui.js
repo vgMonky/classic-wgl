@@ -4,7 +4,7 @@ import { Rectangle, Text, Sprite } from "/classic/transforms.js";
 // // Objective: Final API based on UIManager class,
 // after having basic elements and layout system, create various components as examples 
 
-// --- Most basic UI class  of the system is UIElement,
+// --- Most basic UI element of the system is UIElement,
 //     from this other elements can be extended ---
 
 // A UIElement is just an entity with a rectangle component,
@@ -31,6 +31,7 @@ import { Rectangle, Text, Sprite } from "/classic/transforms.js";
             [x, y, zlayer], // pos
             [this.width, this.height, 1], // scale
             color, // color
+            // border [width, color, radius]
             true // ignoreCam
         );
     }
@@ -172,28 +173,27 @@ class UIText extends UIElement {
 
 class UISprite extends UIElement {
     constructor(
-        name,
-        texture,       // string name from manifest.json
-        width,         // pixels
-        height,        // pixels
-        frame,     // sprite sheet frame
-        tileSetSize, // tiles in texture
-        anchor,
-        zlayer
+        name,   //: string
+        texture,       //: string -> name from manifest.json
+        width,         //: number -> pixels
+        height,        //: number -> pixels
+        frame,     //: number -> sprite sheet frame
+        tileSetSize, //: number -> tiles in texture
+        color, //: [r,g,b,a]
+        zlayer //: number
     ) {
-        // Use a transparent rectangle as base
-        super(name, [0,0,0,0], width, height, zlayer);
+        super(name, color, width, height, zlayer);
 
         // Add Sprite component
         this.spriteComp = this.entity.addComponent(
             Sprite,
             [this.position[0], this.position[1], zlayer],
-            [width / 64, height / 64, 1], // scale in terms of pixels / texture? adjust if needed
+            [width / (64 * tileSetSize[0]) , height / (64 * tileSetSize[1]), 1], // scale in terms of pixels / texture? adjust if needed
             texture,
             true,             // ignoreCam → screen-space
             frame,
             tileSetSize,
-            anchor
+            [0, 0] // dont change this anchor, use container element instead (e.g. UIAnchor)
         );
 
         // Optional: update position on refresh
@@ -216,7 +216,7 @@ class UISprite extends UIElement {
     setSize(width, height) {
         super.setSize(width, height);
         // Update scale accordingly
-        this.spriteComp.scale = [width / 64, height / 64, 1]; // adjust 64 if needed
+        this.spriteComp.scale = [width / (64 * tileSetSize[0]), height / (64 * tileSetSize[1]), 1]; // adjust 64 if needed
         return this;
     }
 
@@ -468,10 +468,10 @@ class UIManager {
         height = 64,               // height in pixels
         frame = 0,                 // sprite sheet frame
         tileSetSize = [1, 1],      // tiles in texture
-        anchor = [0.5, 0.5]        // pivot point
+        color = [1,1,1,0.2]
     ) {
         const name = this._generateName("sprite");
-        const sprite = new UISprite(name, texture, width, height, frame, tileSetSize, anchor, this.zlayer);
+        const sprite = new UISprite(name, texture, width, height, frame, tileSetSize, color, this.zlayer);
         this.elements.set(name, sprite);
         return sprite;
     }    
@@ -597,8 +597,15 @@ export function initUI() {
 
 
     // sprite test
-    let mySprite = UI.spawnSprite("editorIcons", 30, 30, 2, [4, 4]);
+    let myAnchor = UI.spawnAnchor(60, 60)
+
+    let mySprite = UI.spawnSprite("editorIcons", 60, 60, 2, [4, 4]);
     mySprite.setPosition(game.canvas.width/2, game.canvas.height/4);
     
+    // let myText = UI.spawnText("weep!!!", 1, 1000)
+    // myText.setPosition(game.canvas.width/2, game.canvas.height/4);
+    
+    // myAnchor.addChild(myText, "bot-left", "bot-left")
+    myAnchor.addChild(mySprite, "bot-right", "top-left")
 
 }
