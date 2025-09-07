@@ -62,6 +62,7 @@ class UIText extends UIElement {
         text, //: string
         textScale, //: number
         maxWidth, //: number
+        // a lineHeight argument?
         color, //: [r, g, b, a]
         bgColor, //: [r, g, b, a]
         zlayer //: number
@@ -174,7 +175,7 @@ class UIText extends UIElement {
 class UISprite extends UIElement {
     constructor(
         name,   //: string
-        texture,       //: string -> name from manifest.json
+        texture,       //: string -> texture name from manifest.json
         width,         //: number -> pixels
         height,        //: number -> pixels
         frame,     //: number -> sprite sheet frame
@@ -196,6 +197,8 @@ class UISprite extends UIElement {
             [0, 0] // dont change this anchor, use container element instead (e.g. UIAnchor)
         );
 
+        this.tileSetSize = tileSetSize
+
         // Optional: update position on refresh
         this.entity.registerCall("refreshUI", () => {
             this._refreshPosition();
@@ -216,7 +219,7 @@ class UISprite extends UIElement {
     setSize(width, height) {
         super.setSize(width, height);
         // Update scale accordingly
-        this.spriteComp.scale = [width / (64 * tileSetSize[0]), height / (64 * tileSetSize[1]), 1]; // adjust 64 if needed
+        this.spriteComp.scale = [width / (64 * this.tileSetSize[0]), height / (64 * this.tileSetSize[1]), 1]; // adjust 64 if needed
         return this;
     }
 
@@ -229,8 +232,8 @@ class UISprite extends UIElement {
 
 // --- There are also "container elements" that recalculate their
 //     children screen position based on some parameters
-//     and logics ---
-//     Should we create a base class ContainerElement extending UIElement ???
+//     and logics -> with addChild(params) & setChildrenPos(params) ---
+//     Should we create a base class UIContainer extending UIElement ???
 
 // UIAnchor: Container element that repositions its children in the global pos
 //          based on its own position, a self anchor, and a child anchor.
@@ -421,13 +424,14 @@ class UIPadding extends UIElement {
     }
 }
 
-
-
 // UIPanel: Container element that has a specific size, making the inner content
-//          only render what fits in the panel. It should also include scroll
-//          behaiviour and scroll bar. 
+//          only render what fits in the panel. It should include scroll
+//          behaiviour and scroll bar if inner content excedes the panel size.
 
 
+
+
+// --- OKAY!!!
 // --- How to use all this elements above? ---
 class UIManager {
     constructor(gameInstance) {
@@ -565,24 +569,45 @@ export function initUI() {
     root.addChild(menu, "bot-center", "bot-center")
 
     // game over component
+    // create the elements
     let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
-        .addChild(UI.spawnArray(true, "center", 12, [0,0,0,0])
-            .addChild(UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1]))
-            .addChild(UI.spawnText("start again", 0.5, 200, undefined, [0,0.3,0,0.05]))
-        )
+    let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
+    let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
+    let text2 = UI.spawnText("start again", 0.5, 200, undefined, [0,0.3,0,0.05])
+    // nest the elements
+    content.addChild(text1)
+    content.addChild(text2)
+    gameover.addChild(content)
     root.addChild(gameover, "mid-center", "mid-center");
+    // test pad animation
+    root.entity.registerCall("refreshUI", () => {
+        let max = 50;
+        let min = 40;
+    
+        // Use time (in ms) to animate the sine wave
+        let t = Date.now() / 200; // adjust divisor to change speed
+        let sine = Math.sin(t); // oscillates between -1 and 1
+    
+        // Map sine wave [-1,1] to [min,max]
+        let value = min + (sine + 1) / 2 * (max - min);
+    
+        // Apply padding
+        gameover.setPadding([value, value, value, value]);
+    });
+    
 
     // minimap component
     let minimap = UI.spawnPadding([10,10,10,10], [0,0.1,0,0.9])
         .addChild(UI.spawnAnchor(200, 200, [0,0,0,0])
             .addChild(
-                UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [1,1,1,1], [0,0,0,0]),
+                UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [0,0.8,0,1], [0,0.1,0,1]),
                 "bot-left", "bot-left"
             )
         )
     root.addChild(minimap,"top-right", "top-right")
 
     // fps counter component
+    let fpsPad = UI.spawnPadding([5,5,5,5], [0,0.1,0,1])
     let fpsC = UI.spawnText("fps", 0.8, 100);
     let lastFPS = 0;
     let timeAccumulator = 0;
@@ -594,18 +619,29 @@ export function initUI() {
             timeAccumulator = 0;
         }
     });
+    fpsPad.addChild(fpsC)
 
 
-    // sprite test
-    let myAnchor = UI.spawnAnchor(60, 60)
+    // sprite test component
+    let myAnchor = UI.spawnAnchor(60, 60, [1,1,1,0.1])
+    let mySprite = UI.spawnSprite("editorIcons", 60, 60, 0, [4, 4]);
+    myAnchor.addChild(mySprite, "top-right", "mid-center")
+    root.addChild(myAnchor, "bot-left", "bot-left")
 
-    let mySprite = UI.spawnSprite("editorIcons", 60, 60, 2, [4, 4]);
-    mySprite.setPosition(game.canvas.width/2, game.canvas.height/4);
+    // test sprite size animation
+    root.entity.registerCall("refreshUI", () => {
+        let max = 80;
+        let min = 60;
     
-    // let myText = UI.spawnText("weep!!!", 1, 1000)
-    // myText.setPosition(game.canvas.width/2, game.canvas.height/4);
+        // Use time (in ms) to animate the sine wave
+        let t = Date.now() / 200; // adjust divisor to change speed
+        let sine = Math.sin(t); // oscillates between -1 and 1
     
-    // myAnchor.addChild(myText, "bot-left", "bot-left")
-    myAnchor.addChild(mySprite, "bot-right", "top-left")
+        // Map sine wave [-1,1] to [min,max]
+        let value = min + (sine + 1) / 2 * (max - min);
+    
+        // Apply padding
+        mySprite.setSize(value, value);
+    });
 
 }
