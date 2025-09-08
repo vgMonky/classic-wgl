@@ -100,6 +100,7 @@ class UIText extends UIElement {
             }
         }
         if (line.length) lines.push(line);
+
         return lines;
     }
 
@@ -127,23 +128,31 @@ class UIText extends UIElement {
             this.glyphSize[1] * this.textScale
         ];
         this.maxCharPerLine = Math.max(1, Math.floor(this.maxWidth / scaledGlyphSize[0]));
-
         const lines = UIText.wrapText(this.rawText || "", this.maxCharPerLine);
-
-        // Recycle components: make extras invisible
+    
+        // Recycle existing components
         for (let i = 0; i < this.textComps.length; i++) {
             if (i < lines.length) {
-                // Update existing component
-                this.textComps[i].setText(lines[i].toUpperCase());
+                const lineText = lines[i].toUpperCase();
+    
+                // 1) ensure capacity (only if needed)
+                if (this.textComps[i].maxCharSize[0] < lineText.length) {
+                    this.textComps[i].setMaxCharSize(lineText.length, 1);
+                }
+    
+                // 2) make visible BEFORE setText so setText actually updates the FBO
+                this.textComps[i].visible = true;
+    
+                // 3) update content & appearance
+                this.textComps[i].setText(lineText);
                 this.textComps[i].scale = [this.textScale, this.textScale, 1];
                 this.textComps[i].color = this.color;
-                this.textComps[i].visible = true;
+    
             } else {
-                // Hide unused components
                 this.textComps[i].visible = false;
             }
         }
-
+    
         // Add new components if needed
         for (let i = this.textComps.length; i < lines.length; i++) {
             const lineText = lines[i].toUpperCase();
@@ -152,7 +161,7 @@ class UIText extends UIElement {
                 [0, 0, this.rectangle.position[2]],
                 [this.textScale, this.textScale, 1],
                 "font",
-                [lineText.length, 1],
+                [lineText.length, 1],     // initial capacity
                 this.fontSize,
                 this.glyphSize,
                 this.glyphStr,
@@ -160,22 +169,24 @@ class UIText extends UIElement {
                 [0, 0, 0, 0],
                 true
             );
-            textComp.setText(lineText);
+    
+            // visible BEFORE setText
             textComp.visible = true;
+            textComp.setText(lineText);
+    
             this.textComps.push(textComp);
         }
-
-        // Update background size
+    
+        // Update background size from the *actual* content lengths
         const maxLineLength = Math.max(1, ...lines.map(l => l.length));
         const lineCount = lines.length;
-
-        this.width = scaledGlyphSize[0] * maxLineLength;
+        this.width  = scaledGlyphSize[0] * maxLineLength;
         this.height = scaledGlyphSize[1] * lineCount;
         this.rectangle.scale = [this.width, this.height, 1];
-
-        // Update positions
+    
         this._refreshPositions();
     }
+    
 
     _refreshPositions() {
         const [x, y] = this.position;
@@ -566,36 +577,18 @@ export function initUI() {
         root.setSize(game.canvas.width, game.canvas.height)
     });
 
-
-    // items component
-    let s = 40
-    let menu = UI.spawnArray(false, "center", 9, [0,0.2,0,0])
-        .addChild(UI.spawnAnchor(s, s)
-            .addChild(UI.spawnText("1",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s, s)
-            .addChild(UI.spawnText("2",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s, s)
-            .addChild(UI.spawnText("3",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s+15, s+15)
-            .addChild(UI.spawnText("4",0.8, 500, [1,1,1,1])
-                .setText("u")))
-        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("5",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("6",0.5, 50, [1,1,1,1])))
-        .addChild(UI.spawnAnchor(s, s).addChild(UI.spawnText("7",0.5, 50, [1,1,1,1])))
-    root.addChild(menu, "bot-center", "bot-center")
-
     // game over component
     // create the elements
     let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
     let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
     let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
-    let text2 = UI.spawnText("start again", 0.4, 300, undefined, [0,0.3,0,0.05])
+    let text2 = UI.spawnText("start again", 0.4, 200, undefined, [0,0.3,0,0.05])
     // nest the elements
     content.addChild(text1)
     content.addChild(text2)
     gameover.addChild(content)
     root.addChild(gameover, "mid-center", "mid-center");
-
+    text2.setText("welcome to this part")
     // test animation
     root.entity.registerCall("refreshUI", () => {
         text2.setColor(0, 0, 0, newSine(0, 0.2, 200));
@@ -608,7 +601,7 @@ export function initUI() {
     let minimap = UI.spawnPadding([10,10,10,10], [0,0.1,0,0.9])
         .addChild(UI.spawnAnchor(200, 200, [0,0,0,0])
             .addChild(
-                UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [0,0.8,0,1], [0,0.1,0,1]),
+                UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [0,0.7,0,1], [0,0.1,0,1]),
                 "bot-left", "bot-left"
             )
         )
@@ -638,18 +631,7 @@ export function initUI() {
 
     // test sprite size animation
     root.entity.registerCall("refreshUI", () => {
-        let max = 80;
-        let min = 60;
-    
-        // Use time (in ms) to animate the sine wave
-        let t = Date.now() / 200; // adjust divisor to change speed
-        let sine = Math.sin(t); // oscillates between -1 and 1
-    
-        // Map sine wave [-1,1] to [min,max]
-        let value = min + (sine + 1) / 2 * (max - min);
-    
-        // Apply padding
-        mySprite.setSize(value, value);
+        mySprite.setSize(newSine(60,80,200), newSine(60,80,200));
     });
 
 
