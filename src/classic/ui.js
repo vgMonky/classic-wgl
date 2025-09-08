@@ -63,62 +63,40 @@ class UIElement {
 
  
 class UIText extends UIElement {
-    constructor(
-        name, //: string
-        text, //: string
-        textScale, //: number
-        maxWidth, //: number
-        // a lineHeight argument?
-        color, //: [r, g, b, a]
-        bgColor, //: [r, g, b, a]
-        zlayer //: number
-    ) {
+    constructor(name, text, textScale, maxWidth, color, bgColor, zlayer) {
         // Setup font and sizing before calling super
         const fontSize = [16, 16];
         const glyphSize = [32, 32];
         const glyphStr = "!\"#$%&'()*+,-./?0123456789:;<=>@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`{|}~";
 
-        const scaledGlyphSize = [
-            glyphSize[0] * textScale,
-            glyphSize[1] * textScale
-        ];
+        super(name, bgColor, 0, 0, zlayer);
 
-        const maxCharPerLine = Math.floor(maxWidth / scaledGlyphSize[0]);
-        const lines = UIText.wrapText(text, maxCharPerLine);
-        const maxLineLength = Math.max(...lines.map(l => l.length));
-        const lineCount = lines.length;
-
-        const autoWidth = scaledGlyphSize[0] * maxLineLength;
-        const autoHeight = scaledGlyphSize[1] * lineCount;
-
-        super(name, bgColor, autoWidth, autoHeight, zlayer);
-
-        // Assign the rest
-        this.textScale = textScale;
-        this.color = color;
+        // Core data
         this.fontSize = fontSize;
         this.glyphSize = glyphSize;
         this.glyphStr = glyphStr;
-        this.maxWidth = maxWidth;
-        this.maxCharPerLine = maxCharPerLine;
         this.textComps = [];
 
-        // Create text lines
-        this.setText(text);
+        this.rawText = text;
+        this.textScale = textScale;
+        this.maxWidth = maxWidth;
+        this.color = color;
 
-        // Let refreshUI reposition text lines
-        this.entity.registerCall("refreshUI", () => {
-            this._refreshPositions();
-        });
+        // Do the initial build
+        this._recalculateTextElement();
+
+        // Keep positions fresh
+        this.entity.registerCall("refreshUI", () => this._refreshPositions());
     }
 
+    // --------------------
     static wrapText(str, maxCharPerLine) {
         const words = str.split(' ');
         const lines = [];
         let line = "";
 
         for (let word of words) {
-            if ((line + word).length < maxCharPerLine) {
+            if ((line + (line.length ? " " : "") + word).length <= maxCharPerLine) {
                 line += (line.length ? " " : "") + word;
             } else {
                 if (line.length > 0) lines.push(line);
@@ -129,28 +107,55 @@ class UIText extends UIElement {
         return lines;
     }
 
+    // --------------------
     setText(str) {
-        this.rawText = str; // store the original string
-    
-        const lines = UIText.wrapText(str, this.maxCharPerLine);
-    
-        // If we have fewer lines now, remove the extra components
+        this.rawText = str;
+        this._recalculateTextElement();
+        return this;
+    }
+
+    setTextScale(newScale) {
+        this.textScale = newScale;
+        this._recalculateTextElement();
+        return this;
+    }
+
+    setTextColor(r, g, b, a = 1) {
+        this.color = [r, g, b, a];
+        this._recalculateTextElement();
+        return this;
+    }
+
+    // --------------------
+    _recalculateTextElement() {
+        // 1. Compute scaled glyphs + wrapping
+        const scaledGlyphSize = [
+            this.glyphSize[0] * this.textScale,
+            this.glyphSize[1] * this.textScale
+        ];
+        this.maxCharPerLine = Math.max(1, Math.floor(this.maxWidth / scaledGlyphSize[0]));
+
+        const lines = UIText.wrapText(this.rawText || "", this.maxCharPerLine);
+
+        // 2. Adjust text components
         while (this.textComps.length > lines.length) {
             const comp = this.textComps.pop();
             this.entity.removeComponent(comp);
         }
-    
-        // Update existing components and add new ones if needed
+
         for (let i = 0; i < lines.length; i++) {
+            const lineText = lines[i].toUpperCase();
             if (this.textComps[i]) {
-                this.textComps[i].setText(lines[i].toUpperCase());
+                this.textComps[i].setText(lineText);
+                this.textComps[i].scale = [this.textScale, this.textScale, 1];
+                this.textComps[i].color = this.color;
             } else {
                 const textComp = this.entity.addComponent(
                     Text,
                     [0, 0, this.rectangle.position[2]],
                     [this.textScale, this.textScale, 1],
                     "font",
-                    [lines[i].length, 1],
+                    [lineText.length, 1],
                     this.fontSize,
                     this.glyphSize,
                     this.glyphStr,
@@ -158,59 +163,22 @@ class UIText extends UIElement {
                     [0, 0, 0, 0],
                     true
                 );
-                textComp.setText(lines[i].toUpperCase());
+                textComp.setText(lineText);
                 this.textComps.push(textComp);
             }
         }
-    
-        this._refreshPositions();
-        return this;
-    }
-    
-    setTextScale(newScale) {
-        this.textScale = newScale;
-    
-        // Recalculate glyph size
-        const scaledGlyphSize = [
-            this.glyphSize[0] * this.textScale,
-            this.glyphSize[1] * this.textScale
-        ];
-    
-        // Recalculate wrapping
-        this.maxCharPerLine = Math.floor(this.maxWidth / scaledGlyphSize[0]);
-    
-        // Reapply text using stored rawText
-        this.setText(this.rawText);
-    
-        // Recalculate background size
-        const lines = UIText.wrapText(this.rawText, this.maxCharPerLine);
-        const maxLineLength = Math.max(...lines.map(l => l.length));
+
+        // 3. Update background size
+        const maxLineLength = Math.max(1, ...lines.map(l => l.length));
         const lineCount = lines.length;
-    
+
         this.width = scaledGlyphSize[0] * maxLineLength;
         this.height = scaledGlyphSize[1] * lineCount;
         this.rectangle.scale = [this.width, this.height, 1];
-    
-        // Update text component scales
-        for (let comp of this.textComps) {
-            comp.scale = [this.textScale, this.textScale, 1];
-        }
-    
-        this._refreshPositions();
-        return this;
-    }
-    
-    
 
-    setTextColor(r, g, b, a = 1) {
-        this.color = [r, g, b, a];
-        for (let comp of this.textComps) {
-            comp.color = this.color; // update existing glyph components
-        }
-        return this;
+        // 4. Update positions
+        this._refreshPositions();
     }
-    
-    
 
     _refreshPositions() {
         const [x, y] = this.position;
@@ -221,6 +189,7 @@ class UIText extends UIElement {
         }
     }
 }
+
 
 class UISprite extends UIElement {
     constructor(
@@ -623,7 +592,7 @@ export function initUI() {
     let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
     let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
     let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
-    let text2 = UI.spawnText("start again", 0.2, 2000, undefined, [0,0.3,0,0.05])
+    let text2 = UI.spawnText("start again you bitch", 0.4, 150, undefined, [0,0.3,0,0.05])
     // nest the elements
     content.addChild(text1)
     content.addChild(text2)
@@ -631,12 +600,10 @@ export function initUI() {
     root.addChild(gameover, "mid-center", "mid-center");
     // test animation
     root.entity.registerCall("refreshUI", () => {
-        // text1.setTextColor(0, newSine(0.7, 0.9, 200), 0, 1);
-        gameover.setPadding(Array(4).fill(newSine(40, 60, 400)));
-        text2.setTextScale(newSine(0.4, 0.5, 200));
         text2.setColor(0, 0, 0, newSine(0, 0.2, 200));
+        text2.setTextColor(0, newSine(0.6, 0.9, 200), 0, 1);
+        text2.setTextScale(newSine(0.6, 0.9, 200))
     });
-    
     
 
     // minimap component
