@@ -79,6 +79,7 @@ class UIText extends UIElement {
         this.textScale = textScale;
         this.maxWidth = maxWidth;
         this.color = color;
+        this.lineHeight = 1.3;
 
         // Initialize
         this._recalculateTextElement();
@@ -181,7 +182,7 @@ class UIText extends UIElement {
         const maxLineLength = Math.max(1, ...lines.map(l => l.length));
         const lineCount = lines.length;
         this.width  = scaledGlyphSize[0] * maxLineLength;
-        this.height = scaledGlyphSize[1] * lineCount;
+        this.height = scaledGlyphSize[1] + (scaledGlyphSize[1] * this.lineHeight * (lineCount - 1));
         this.rectangle.scale = [this.width, this.height, 1];
     
         this._refreshPositions();
@@ -190,7 +191,7 @@ class UIText extends UIElement {
 
     _refreshPositions() {
         const [x, y] = this.position;
-        const lineHeight = this.glyphSize[1] * this.textScale;
+        const lineHeight = this.glyphSize[1] * this.textScale * this.lineHeight;
 
         for (let i = 0; i < this.textComps.length; i++) {
             this.textComps[i].position = [x, y + i * lineHeight, this.rectangle.position[2]];
@@ -588,7 +589,7 @@ export function initUI() {
     content.addChild(text2)
     gameover.addChild(content)
     root.addChild(gameover, "mid-center", "mid-center");
-    text2.setText("welcome to this part")
+    text2.setText("press enter start again")
     // test animation
     root.entity.registerCall("refreshUI", () => {
         text2.setColor(0, 0, 0, newSine(0, 0.2, 200));
