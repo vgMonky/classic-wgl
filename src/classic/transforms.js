@@ -237,6 +237,7 @@ class Text extends Drawable {
         ignoreCam 
     ) {
         super(entity, position, scale);
+        this.visible = true;
         this.textureFont = this.game.getTexture(textureFont);
         this.ignoreCam = ignoreCam;
 
@@ -431,6 +432,7 @@ class Text extends Drawable {
     }
 
     setText(str) {
+        if (!this.visible) return; // skip updating texture if hidden
         this.cursorPos = [0, 0];
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.frameBuffer);
         this.gl.clearColor(
@@ -443,6 +445,7 @@ class Text extends Drawable {
     }
 
     rawDraw() {
+        if (!this.visible) return; // <-- skip drawing if invisible
 
         // Verts
         this.game.buffers.quad.verts.bind();
