@@ -9,29 +9,29 @@ import { Rectangle, Text, Sprite } from "/classic/transforms.js";
 
 // A UIElement is just an entity with a rectangle component,
 // its just an object that ocupies some space in the screen
- class UIElement {
+class UIElement {
     constructor(
         name, //: string
         color, //: [r, g, b, a] -> number between 0-1
         width, //: number -> pixels
-        height, //: nubmer -> pixels
+        height, //: number -> pixels
         zlayer //: number
     ) { 
         this.width = width;
         this.height = height;
-        this.position = [0, 0]
+        this.position = [0, 0];
+        this.color = color;
 
         // Spawn the entity
-        this.entity = game.spawnEntity(name); // prefixed from UIManager
+        this.entity = game.spawnEntity(name);
 
-        // Add Rectangle component using position
+        // Add Rectangle component
         const [x, y] = this.position;
         this.rectangle = this.entity.addComponent(
             Rectangle,
             [x, y, zlayer], // pos
             [this.width, this.height, 1], // scale
             color, // color
-            // border [width, color, radius]
             true // ignoreCam
         );
     }
@@ -40,7 +40,6 @@ import { Rectangle, Text, Sprite } from "/classic/transforms.js";
         this.position = [x, y];
         this.rectangle.position = [x, y, this.rectangle.position[2]];
         
-        // if its a layout container set recursive...
         if (typeof this.setChildrenPos === "function") {
             this.setChildrenPos();
         }
@@ -50,10 +49,17 @@ import { Rectangle, Text, Sprite } from "/classic/transforms.js";
     setSize(width, height) {
         this.width = width;
         this.height = height;
-        this.rectangle.scale = [this.width, this.height, 1]
+        this.rectangle.scale = [this.width, this.height, 1];
+        return this;
     }
-  
+
+    setColor(r, g, b, a = 1) {
+        this.color = [r, g, b, a];
+        this.rectangle.color = this.color;
+        return this;
+    }
 }
+
 
  
 class UIText extends UIElement {
@@ -124,6 +130,8 @@ class UIText extends UIElement {
     }
 
     setText(str) {
+        this.rawText = str; // store the original string
+    
         const lines = UIText.wrapText(str, this.maxCharPerLine);
     
         // If we have fewer lines now, remove the extra components
@@ -135,13 +143,11 @@ class UIText extends UIElement {
         // Update existing components and add new ones if needed
         for (let i = 0; i < lines.length; i++) {
             if (this.textComps[i]) {
-                // Just update the text of the existing component
                 this.textComps[i].setText(lines[i].toUpperCase());
             } else {
-                // Create new component if not enough
                 const textComp = this.entity.addComponent(
                     Text,
-                    [0, 0, this.rectangle.position[2]], // position will be updated in refresh
+                    [0, 0, this.rectangle.position[2]],
                     [this.textScale, this.textScale, 1],
                     "font",
                     [lines[i].length, 1],
@@ -158,8 +164,52 @@ class UIText extends UIElement {
         }
     
         this._refreshPositions();
-        return this
+        return this;
     }
+    
+    setTextScale(newScale) {
+        this.textScale = newScale;
+    
+        // Recalculate glyph size
+        const scaledGlyphSize = [
+            this.glyphSize[0] * this.textScale,
+            this.glyphSize[1] * this.textScale
+        ];
+    
+        // Recalculate wrapping
+        this.maxCharPerLine = Math.floor(this.maxWidth / scaledGlyphSize[0]);
+    
+        // Reapply text using stored rawText
+        this.setText(this.rawText);
+    
+        // Recalculate background size
+        const lines = UIText.wrapText(this.rawText, this.maxCharPerLine);
+        const maxLineLength = Math.max(...lines.map(l => l.length));
+        const lineCount = lines.length;
+    
+        this.width = scaledGlyphSize[0] * maxLineLength;
+        this.height = scaledGlyphSize[1] * lineCount;
+        this.rectangle.scale = [this.width, this.height, 1];
+    
+        // Update text component scales
+        for (let comp of this.textComps) {
+            comp.scale = [this.textScale, this.textScale, 1];
+        }
+    
+        this._refreshPositions();
+        return this;
+    }
+    
+    
+
+    setTextColor(r, g, b, a = 1) {
+        this.color = [r, g, b, a];
+        for (let comp of this.textComps) {
+            comp.color = this.color; // update existing glyph components
+        }
+        return this;
+    }
+    
     
 
     _refreshPositions() {
@@ -573,27 +623,20 @@ export function initUI() {
     let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
     let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
     let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
-    let text2 = UI.spawnText("start again", 0.5, 200, undefined, [0,0.3,0,0.05])
+    let text2 = UI.spawnText("start again", 0.2, 2000, undefined, [0,0.3,0,0.05])
     // nest the elements
     content.addChild(text1)
     content.addChild(text2)
     gameover.addChild(content)
     root.addChild(gameover, "mid-center", "mid-center");
-    // test pad animation
+    // test animation
     root.entity.registerCall("refreshUI", () => {
-        let max = 50;
-        let min = 40;
-    
-        // Use time (in ms) to animate the sine wave
-        let t = Date.now() / 200; // adjust divisor to change speed
-        let sine = Math.sin(t); // oscillates between -1 and 1
-    
-        // Map sine wave [-1,1] to [min,max]
-        let value = min + (sine + 1) / 2 * (max - min);
-    
-        // Apply padding
-        gameover.setPadding([value, value, value, value]);
+        // text1.setTextColor(0, newSine(0.7, 0.9, 200), 0, 1);
+        gameover.setPadding(Array(4).fill(newSine(40, 60, 400)));
+        text2.setTextScale(newSine(0.4, 0.5, 200));
+        text2.setColor(0, 0, 0, newSine(0, 0.2, 200));
     });
+    
     
 
     // minimap component
@@ -644,4 +687,16 @@ export function initUI() {
         mySprite.setSize(value, value);
     });
 
+
+
+
+    // Utility
+    function newSine(min, max, speed = 1000, offset = 0) {
+        // speed = duration of one full sine cycle in ms
+        // offset = phase shift (optional, defaults to 0)
+        const t = Date.now() / speed + offset;
+        const sine = Math.sin(t); // oscillates between -1 and 1
+        return min + (sine + 1) / 2 * (max - min);
+    }
+    
 }
