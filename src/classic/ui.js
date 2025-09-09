@@ -637,37 +637,17 @@ export function initUI() {
 
 
     // ---- interaction test ----
-    // test UIElement
+    // 1. reate UIElement
     let elem = UI.spawnElement(100,100,[1,1,1,1])
     root.addChild(elem, "bot-right", "bot-right")
+    
+    // 2. Create and place collider based on element size
+    const elemCollider = addColliderToElem(elem);
 
-    // Use the rectangle size to define the polygon
-    const elemVerts = [
-        [0, 0, 0],
-        [elem.width, 0, 0],
-        [elem.width, elem.height, 0],
-        [0, elem.height, 0]
-    ];
-    // Create a polygon shape
-    const elemShape = new Polygon(
-        game,
-        [elem.position[0], elem.position[1], 0],
-        [1, 1, 1], // no extra scaling
-        0,         // rotation
-        elemVerts
-    );
-    // Add a collider to the element (with the same exact shape)
-    const elemCollider = elem.entity.addComponent(Collider, elemShape);
-    // update collider pos constantlly based on elem 
-    elem.entity.registerCall("refreshUI", () => {
-        elemShape.position = [elem.position[0], elem.position[1], 0];
-        elemCollider.updateRect();
-    });
-
+    // 3. Define interaction
     // test click event
     elemCollider.addHandler("click", () => {
         console.log("UI element clicked!");
-        // You can toggle color, scale, etc.
         elem.setColor(Math.random(), Math.random(), Math.random(), 1);
         return true; // returning true stops propagation
     });
@@ -685,10 +665,56 @@ export function initUI() {
 }
 
 // Utility
-export function newSine(min, max, speed = 1000, offset = 0) {
+function newSine(min, max, speed = 1000, offset = 0) {
     // speed = duration of one full sine cycle in ms
     // offset = phase shift (optional, defaults to 0)
     const t = Date.now() / speed + offset;
     const sine = Math.sin(t); // oscillates between -1 and 1
     return min + (sine + 1) / 2 * (max - min);
 }
+
+function addColliderToElem(elem) {
+    // 1. Create polygon shape
+    const elemVerts = [
+        [0, 0, 0],
+        [elem.width, 0, 0],
+        [elem.width, elem.height, 0],
+        [0, elem.height, 0]
+    ];
+
+    const elemShape = new Polygon(
+        game,
+        [elem.position[0], elem.position[1], 0],
+        [1, 1, 1],
+        0,
+        elemVerts
+    );
+
+    // 2. Add collider component
+    const elemCollider = elem.entity.addComponent(Collider, elemShape);
+
+    // 3. Update collider position automatically on UI refresh
+    elem.entity.registerCall("refreshUI", () => {
+        elemShape.position = [elem.position[0], elem.position[1], 0];
+        elemCollider.updateRect();
+    });
+
+    // Optional: update polygon verts if element size changes
+    elem.entity.registerCall("refreshUI", () => {
+        const newVerts = [
+            [0, 0, 0],
+            [elem.width, 0, 0],
+            [elem.width, elem.height, 0],
+            [0, elem.height, 0]
+        ];
+        elemShape.rawVerts = newVerts;
+        elemShape._flatVertArray = newVerts.flat();
+        elemShape._rawCenter = vec3.create();
+        for (const vert of newVerts) vec3.add(elemShape._rawCenter, elemShape._rawCenter, vert);
+        vec3.scale(elemShape._rawCenter, elemShape._rawCenter, 1 / newVerts.length);
+        elemCollider.updateRect();
+    });
+
+    return elemCollider;
+}
+
