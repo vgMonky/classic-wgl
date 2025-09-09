@@ -1,8 +1,10 @@
 import game from "/classic/state.js";
 import { Rectangle, Text, Sprite } from "/classic/transforms.js";
 
+import { Polygon, Collider } from "/classic/collision.js";
+import { vec3 } from "/lib/gl-matrix/index.js";
+
 // // Objective: Final API based on UIManager class,
-// after having basic elements and layout system, create various components as examples 
 
 // --- Most basic UI element of the system is UIElement,
 //     from this other elements can be extended ---
@@ -59,7 +61,6 @@ class UIElement {
         return this;
     }
 }
-
 
 class UIText extends UIElement {
     constructor(name, text, textScale, maxWidth, color, bgColor, zlayer) {
@@ -188,6 +189,10 @@ class UIText extends UIElement {
         this._refreshPositions();
     }
     
+    setSize() {
+        console.error("to adjust text size use setTextScale(newScale)");
+        
+    }
 
     _refreshPositions() {
         const [x, y] = this.position;
@@ -198,7 +203,6 @@ class UIText extends UIElement {
         }
     }
 }
-
 
 class UISprite extends UIElement {
     constructor(
@@ -256,7 +260,6 @@ class UISprite extends UIElement {
         return this;
     }
 }
-
 
 // --- There are also "container elements" that recalculate their
 //     children screen position based on some parameters
@@ -455,7 +458,7 @@ class UIPadding extends UIElement {
 // UIPanel: Container element that has a specific size, making the inner content
 //          only render what fits in the panel. It should include scroll
 //          behaiviour and scroll bar if inner content excedes the panel size.
-
+// class UIPanel extends UIElement {
 
 
 
@@ -543,12 +546,8 @@ class UIManager {
     
 
     // other methods
-    _generateName(type = "element") {
+    _generateName(type) {
         return `ui-${this.indexCounter++}-${type}`;
-    }
-
-    getElement(name) {
-        return this.elements.get(name);
     }
 
     destroyElement(name) {
@@ -589,9 +588,9 @@ export function initUI() {
     content.addChild(text2)
     gameover.addChild(content)
     root.addChild(gameover, "mid-center", "mid-center");
-    text2.setText("press enter start again")
     // test animation
     root.entity.registerCall("refreshUI", () => {
+        text1.setTextColor(newSine(0.7, 0.9, 400), 0, 0, 1);
         text2.setColor(0, 0, 0, newSine(0, 0.2, 200));
         text2.setTextColor(0, newSine(0.6, 0.9, 200), 0, 1);
         text2.setTextScale(newSine(0.46, 0.5, 80))
@@ -603,7 +602,7 @@ export function initUI() {
         .addChild(UI.spawnAnchor(200, 200, [0,0,0,0])
             .addChild(
                 UI.spawnText("mini map,   lets try some text wrapping here :)", 0.4, 200, [0,0.7,0,1], [0,0.1,0,1]),
-                "bot-left", "bot-left"
+                "top-left", "top-left"
             )
         )
     root.addChild(minimap,"top-right", "top-right")
@@ -637,14 +636,59 @@ export function initUI() {
 
 
 
+    // ---- interaction test ----
+    // test UIElement
+    let elem = UI.spawnElement(100,100,[1,1,1,1])
+    root.addChild(elem, "bot-right", "bot-right")
 
-    // Utility
-    function newSine(min, max, speed = 1000, offset = 0) {
-        // speed = duration of one full sine cycle in ms
-        // offset = phase shift (optional, defaults to 0)
-        const t = Date.now() / speed + offset;
-        const sine = Math.sin(t); // oscillates between -1 and 1
-        return min + (sine + 1) / 2 * (max - min);
-    }
+    // Use the rectangle size to define the polygon
+    const elemVerts = [
+        [0, 0, 0],
+        [elem.width, 0, 0],
+        [elem.width, elem.height, 0],
+        [0, elem.height, 0]
+    ];
+    // Create a polygon shape
+    const elemShape = new Polygon(
+        game,
+        [elem.position[0], elem.position[1], 0],
+        [1, 1, 1], // no extra scaling
+        0,         // rotation
+        elemVerts
+    );
+    // Add a collider to the element (with the same exact shape)
+    const elemCollider = elem.entity.addComponent(Collider, elemShape);
+    // update collider pos constantlly based on elem 
+    elem.entity.registerCall("refreshUI", () => {
+        elemShape.position = [elem.position[0], elem.position[1], 0];
+        elemCollider.updateRect();
+    });
+
+    // test click event
+    elemCollider.addHandler("click", () => {
+        console.log("UI element clicked!");
+        // You can toggle color, scale, etc.
+        elem.setColor(Math.random(), Math.random(), Math.random(), 1);
+        return true; // returning true stops propagation
+    });
+    // test hover/idle
+    elem.entity.registerCall("update", () => {
+        if (game.physics.gjk(elemCollider, game.physics.mouse)) {
+            elem.setSize(newSine(100,120,200), newSine(100,120,200)); // enlarge on hover
+        } else {
+            elem.setSize(100, 100); // normal size
+        }
+    });
     
+    
+    
+}
+
+// Utility
+export function newSine(min, max, speed = 1000, offset = 0) {
+    // speed = duration of one full sine cycle in ms
+    // offset = phase shift (optional, defaults to 0)
+    const t = Date.now() / speed + offset;
+    const sine = Math.sin(t); // oscillates between -1 and 1
+    return min + (sine + 1) / 2 * (max - min);
 }
