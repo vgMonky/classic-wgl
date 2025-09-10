@@ -464,12 +464,19 @@ class UIPadding extends UIElement {
 
 // --- OKAY!!!
 // --- How to use all this elements above? ---
-class UIManager {
+export class UIManager {
     constructor(gameInstance) {
         this.game = gameInstance;
         this.elements = new Map(); // name -> UIElement
         this.indexCounter = 0;
         this.zlayer = -1000;
+
+        // Root element (screen)
+        this.root = this.spawnAnchor(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.7])
+        this.root.entity.registerCall("refreshUI", () => {
+            this.root.setSize(game.canvas.width, game.canvas.height)
+        });
+
     }
 
     // spawn methods
@@ -618,13 +625,13 @@ class UIManager {
     }
 }    
 
-export function initUI() {
+// Test Example, should be initialize from demo.js 
+export function testUI() {
     let UI = new UIManager(game);
 
     // root element, UI manager should internally set this maybe?
     // for sure it will allways be necesarry because only parents can calculate elements position
     let root = UI.spawnAnchor(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.7])
-
     root.entity.registerCall("refreshUI", () => {
         root.setSize(game.canvas.width, game.canvas.height)
     });
@@ -729,6 +736,3 @@ export function initUI() {
     
     
 }
-
-
-
