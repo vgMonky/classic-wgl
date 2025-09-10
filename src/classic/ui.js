@@ -543,7 +543,6 @@ class UIManager {
         this.elements.set(name, pad);
         return pad;
     }
-    
 
     // other methods
     _generateName(type) {
@@ -564,6 +563,59 @@ class UIManager {
         }
         this.elements.clear();
     }
+
+    newSine(min, max, speed = 1000, offset = 0) {
+        // speed = duration of one full sine cycle in ms
+        // offset = phase shift (optional, defaults to 0)
+        const t = Date.now() / speed + offset;
+        const sine = Math.sin(t); // oscillates between -1 and 1
+        return min + (sine + 1) / 2 * (max - min);
+    }
+
+    addColliderToElem(elem) {
+        // 1. Create polygon shape
+        const elemVerts = [
+            [0, 0, 0],
+            [elem.width, 0, 0],
+            [elem.width, elem.height, 0],
+            [0, elem.height, 0]
+        ];
+
+        const elemShape = new Polygon(
+            game,
+            [elem.position[0], elem.position[1], 0],
+            [1, 1, 1],
+            0,
+            elemVerts
+        );
+
+        // 2. Add collider component
+        const elemCollider = elem.entity.addComponent(Collider, elemShape);
+
+        // 3. Update collider position automatically on UI refresh
+        elem.entity.registerCall("refreshUI", () => {
+            elemShape.position = [elem.position[0], elem.position[1], 0];
+            elemCollider.updateRect();
+        });
+
+        // Optional: update polygon verts if element size changes
+        elem.entity.registerCall("refreshUI", () => {
+            const newVerts = [
+                [0, 0, 0],
+                [elem.width, 0, 0],
+                [elem.width, elem.height, 0],
+                [0, elem.height, 0]
+            ];
+            elemShape.rawVerts = newVerts;
+            elemShape._flatVertArray = newVerts.flat();
+            elemShape._rawCenter = vec3.create();
+            for (const vert of newVerts) vec3.add(elemShape._rawCenter, elemShape._rawCenter, vert);
+            vec3.scale(elemShape._rawCenter, elemShape._rawCenter, 1 / newVerts.length);
+            elemCollider.updateRect();
+        });
+
+        return elemCollider;
+    }
 }    
 
 export function initUI() {
@@ -582,18 +634,32 @@ export function initUI() {
     let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
     let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
     let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
-    let text2 = UI.spawnText("start again", 0.4, 200, undefined, [0,0.3,0,0.05])
+    let text2 = UI.spawnText("start again", 0.5, 300, undefined, [0,0.3,0,0.05])
     // nest the elements
     content.addChild(text1)
     content.addChild(text2)
     gameover.addChild(content)
     root.addChild(gameover, "mid-center", "mid-center");
+
+    let text2Collider = UI.addColliderToElem(text2)
     // test animation
     root.entity.registerCall("refreshUI", () => {
-        text1.setTextColor(newSine(0.7, 0.9, 400), 0, 0, 1);
-        text2.setColor(0, 0, 0, newSine(0, 0.2, 200));
-        text2.setTextColor(0, newSine(0.6, 0.9, 200), 0, 1);
-        text2.setTextScale(newSine(0.46, 0.5, 80))
+        // idle
+        text1.setTextColor(UI.newSine(0.7, 0.9, 400), 0, 0, 1);
+        text2.setColor(0, 0, 0, UI.newSine(0, 0.2, 200));
+        text2.setTextColor(0, UI.newSine(0.6, 0.9, 200), 0, 1);
+        
+        // hover
+        if (game.physics.gjk(text2Collider, game.physics.mouse)) {
+            text2.setTextScale(UI.newSine(0.45, 0.50, 150))
+        } else {
+            text2.setTextScale(0.5)
+        }
+    });
+    // click
+    text2Collider.addHandler("click", () => {
+        console.log("start again clicked!!!")
+        return true; // returning true stops propagation
     });
     
 
@@ -631,7 +697,7 @@ export function initUI() {
 
     // test sprite size animation
     root.entity.registerCall("refreshUI", () => {
-        mySprite.setSize(newSine(60,80,200), newSine(60,80,200));
+        mySprite.setSize(UI.newSine(60,80,200), UI.newSine(60,80,200));
     });
 
 
@@ -642,7 +708,7 @@ export function initUI() {
     root.addChild(elem, "bot-right", "bot-right")
     
     // 2. Create and place collider based on element size
-    const elemCollider = addColliderToElem(elem);
+    const elemCollider = UI.addColliderToElem(elem);
 
     // 3. Define interaction
     // test click event
@@ -654,7 +720,7 @@ export function initUI() {
     // test hover/idle
     elem.entity.registerCall("update", () => {
         if (game.physics.gjk(elemCollider, game.physics.mouse)) {
-            elem.setSize(newSine(100,120,200), newSine(100,120,200)); // enlarge on hover
+            elem.setSize(UI.newSine(100,120,200), UI.newSine(100,120,200)); // enlarge on hover
         } else {
             elem.setSize(100, 100); // normal size
         }
@@ -664,57 +730,5 @@ export function initUI() {
     
 }
 
-// Utility
-function newSine(min, max, speed = 1000, offset = 0) {
-    // speed = duration of one full sine cycle in ms
-    // offset = phase shift (optional, defaults to 0)
-    const t = Date.now() / speed + offset;
-    const sine = Math.sin(t); // oscillates between -1 and 1
-    return min + (sine + 1) / 2 * (max - min);
-}
 
-function addColliderToElem(elem) {
-    // 1. Create polygon shape
-    const elemVerts = [
-        [0, 0, 0],
-        [elem.width, 0, 0],
-        [elem.width, elem.height, 0],
-        [0, elem.height, 0]
-    ];
-
-    const elemShape = new Polygon(
-        game,
-        [elem.position[0], elem.position[1], 0],
-        [1, 1, 1],
-        0,
-        elemVerts
-    );
-
-    // 2. Add collider component
-    const elemCollider = elem.entity.addComponent(Collider, elemShape);
-
-    // 3. Update collider position automatically on UI refresh
-    elem.entity.registerCall("refreshUI", () => {
-        elemShape.position = [elem.position[0], elem.position[1], 0];
-        elemCollider.updateRect();
-    });
-
-    // Optional: update polygon verts if element size changes
-    elem.entity.registerCall("refreshUI", () => {
-        const newVerts = [
-            [0, 0, 0],
-            [elem.width, 0, 0],
-            [elem.width, elem.height, 0],
-            [0, elem.height, 0]
-        ];
-        elemShape.rawVerts = newVerts;
-        elemShape._flatVertArray = newVerts.flat();
-        elemShape._rawCenter = vec3.create();
-        for (const vert of newVerts) vec3.add(elemShape._rawCenter, elemShape._rawCenter, vert);
-        vec3.scale(elemShape._rawCenter, elemShape._rawCenter, 1 / newVerts.length);
-        elemCollider.updateRect();
-    });
-
-    return elemCollider;
-}
 
