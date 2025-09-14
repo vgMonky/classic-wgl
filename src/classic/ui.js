@@ -55,8 +55,8 @@ class UIElement {
         return this;
     }
 
-    setColor(r, g, b, a = 1) {
-        this.color = [r, g, b, a];
+    setColor(rgba) {
+        this.color = rgba;  // array [r,g,b,a]
         this.rectangle.color = this.color;
         return this;
     }
@@ -118,8 +118,8 @@ class UIText extends UIElement {
         return this;
     }
 
-    setTextColor(r, g, b, a = 1) {
-        this.color = [r, g, b, a];
+    setTextColor(rgba) {
+        this.color = rgba; // array [r,g,b,a]
         this._recalculateTextElement();
         return this;
     }
@@ -472,7 +472,7 @@ export class UIManager {
         this.zlayer = -1000;
 
         // Root element (screen)
-        this.root = this.spawnAnchor(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.7])
+        this.root = this.spawnAnchor(game.canvas.width, game.canvas.height, [0,0.05,0,1])
         this.root.entity.registerCall("refreshUI", () => {
             this.root.setSize(game.canvas.width, game.canvas.height)
         });
@@ -625,16 +625,9 @@ export class UIManager {
     }
 }    
 
-// Test Example, should be initialize from demo.js 
+// Test Example, not updated atm
 export function testUI() {
     let UI = new UIManager(game);
-
-    // root element, UI manager should internally set this maybe?
-    // for sure it will allways be necesarry because only parents can calculate elements position
-    let root = UI.spawnAnchor(game.canvas.width, game.canvas.height, [0.02,0.15,0.04,0.7])
-    root.entity.registerCall("refreshUI", () => {
-        root.setSize(game.canvas.width, game.canvas.height)
-    });
 
     // game over component
     // create the elements
