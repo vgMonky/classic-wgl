@@ -45,7 +45,9 @@ function initTopBar(UIManager) {
     UI.root.addChild(topBarContainer, "top-center", "top-center")
     // instantiate sub-parts
     let FPS = initFPS(UI)
-    let MenuBtn = initBtn(UI, "menu", tMid)
+    let MenuBtn = initBtn(UI, "menu", tMid, () => {
+        console.log("menu");
+    });
     let title = UI.spawnText("Classic Engine + UI", undefined, 1000, [0,0.6,0,1])
     topBarContainer.addChild(FPS, "mid-left", "mid-left")
     topBarContainer.addChild(MenuBtn, "mid-right", "mid-right")
@@ -98,37 +100,43 @@ function initFPS(UIManager) {
 }
 
 
-// Base components
-function initBtn(UIManager, txt="btn", txtSize=tMid  ) {
-    let UI = UIManager
+// Base components - generic reusable components:
+// generic button 
+function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
+    let UI = UIManager;
 
     // Static comp
-    let container = UI.spawnPadding([8,8,8,8], [0,0.15,0,0])
-    let text = UI.spawnText(txt.toString(), txtSize, 200, [0,0.7,0,1], [0,0.15,0,0])
-    container.addChild(text)
-    UI.root.addChild(container, "top-right", "top-right")
+    let container = UI.spawnPadding([8, 8, 8, 8], [0, 0.15, 0, 0]);
+    let text = UI.spawnText(txt.toString(), txtSize, 200, [0, 0.7, 0, 1], [0, 0.15, 0, 0]);
+    container.addChild(text);
+    UI.root.addChild(container, "top-right", "top-right");
+
     // Dynamic comp
-    let container2Collider = UI.addColliderToElem(container)
-    let speed = 150
+    let container2Collider = UI.addColliderToElem(container);
+    let speed = 150;
+
     UI.root.entity.registerCall("refreshUI", () => {
         // idle
         text.setTextColor([UI.newSine(0, 0.4, speed), UI.newSine(0.6, 0.9, speed), 0, 1]);
 
         // hover
         if (game.physics.gjk(container2Collider, game.physics.mouse)) {
-            container.setColor([0, UI.newSine(0.5, 0.8, speed), 0, 1])
-            text.setTextColor([0, 0.1, 0, 1])
-
+            container.setColor([0, UI.newSine(0.5, 0.8, speed), 0, 1]);
+            text.setTextColor([0, 0.1, 0, 1]);
         } else {
-            container.setColor([0,0.15,0,0])
+            container.setColor([0, 0.15, 0, 0]);
         }
     });
+
     // click
     container2Collider.addHandler("click", () => {
-        console.log("clicked!!!")
+        if (onClick) {
+            onClick();   // run custom action
+        } else {
+            console.log("clicked!!!");
+        }
         return true; // returning true stops propagation
     });
-    // also add on click in and out, should appear white throug the click
 
-    return container
+    return container;
 }
