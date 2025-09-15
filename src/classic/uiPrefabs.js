@@ -1,43 +1,48 @@
 import {UIManager} from "/classic/ui.js";
 
-// Color variables hsla (hue, saturation, light, alpha)
+// Define global UI variables, could go on a uiVar.js file
+// --- Color variables hsla (hue, saturation, light, alpha) ---
 // h0 = accent hue (any)
 // h1 = secondary hue (any)
 // h-alert = allert hue (red)
 // h-succses = succses hue (green)
-// *we need a util func hslaToRgba(h,s,l,a) in UIManager and maybe directlly input hsla in all elements construction
-
-// text scale variables
+// ***we need a util func hslaToRgba(h,s,l,a) in UIManager and maybe directlly input hsla in all elements construction
+// --- Text scale variables ---
 let tHuge = 1.8 // huge
 let tBig = 1 // big
 let tMid = 0.5 // normal
 let tSmall = 0.4 // small
 
+// Define global UI state, could go on a uiState.js file
+// --- sideMenu state and actions ---
+let sideMenuIsOpen = false;
+function toggleSideMenu() {
+    sideMenuIsOpen = !sideMenuIsOpen;
+    console.log(sideMenuIsOpen ? "Menu opened" : "Menu closed");
+}
+// --- mainView state and actions ---
+//...
+
+// Define main init func for this first example
 export function initUI() {
     // init UIManager
     let UI = new UIManager(game);
 
-    // define sideMenuState
-    let sideMenuOpen = false
-
     // add components
-    let toggleMenu = initSideMenu(UI)
-    initTopBar(UI, toggleMenu)
-
+    initTopBar(UI)
+    initSideMenu(UI)
+    // initMainView()
 }
 
-function initTopBar(UIManager, toggleMenu) {
+function initTopBar(UIManager) {
     let UI = UIManager
-    // a container with full width at the top
-    // must have: FPScounter, tittle text, menu button.
-    // must update based on screen width breakpoints
 
     let topBarContainer = UI.spawnAnchor(undefined, undefined, [0,0.08,0,1])
     UI.root.addChild(topBarContainer, "top-center", "top-center")
     // instantiate sub-parts
     let FPS = initFPS(UI)
     let MenuBtn = initBtn(UI, "menu", tMid, () => {
-        toggleMenu()
+        toggleSideMenu()
     });
     let title = UI.spawnText("Classic Engine + UI", undefined, 1000, [0,0.6,0,1], [0,0,0,0])
     // set positions
@@ -45,7 +50,7 @@ function initTopBar(UIManager, toggleMenu) {
     topBarContainer.addChild(MenuBtn, "mid-right", "mid-right")
     topBarContainer.addChild(title, "mid-center", "mid-center")
     
-    // update size
+    // make reactive based on screen breakpoints
     UI.root.entity.registerCall("refreshUI", () => {
         topBarContainer.setSize(UI.root.width, FPS.height + 15);
         // mobile
@@ -104,7 +109,6 @@ function initSideMenu(UIManager) {
 
     // Dynamic comp
     let overlayCollider = UI.addColliderToElem(overlay);
-    let isOpen = false
 
     UI.root.entity.registerCall("refreshUI", () => {
         // idle
@@ -117,15 +121,14 @@ function initSideMenu(UIManager) {
         }
         // click
         if (game.wasMouseButtonReleased(0) && game.physics.gjk(overlayCollider, game.physics.mouse)) {
-            if (isOpen) {
-                console.log("closing menu")
-                isOpen = false
+            if (sideMenuIsOpen==true) {
+                toggleSideMenu();
             }
         }
     });
     UI.root.entity.registerCall("refreshUI", () => {
         // in open state
-        if (isOpen) {
+        if (sideMenuIsOpen==true) {
             sideContainer.setColor([0,0.1,0,1])
             sideContainer.setSize(200, UI.root.height)
         }
@@ -136,13 +139,6 @@ function initSideMenu(UIManager) {
             overlay.setSize(0,0)
         }
     });
-
-    function toggle() {
-        isOpen = !isOpen
-        console.log(isOpen ? "open menu..." : "close menu...");
-    }
-
-    return toggle
 }
 // ...
 function initMenuContent(UIManager) {
@@ -188,7 +184,7 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
             text.setTextColor([0, 0.1, 0, 1]);
         }
         // click
-        if (game.wasMouseButtonPressed(0) && game.physics.gjk(container2Collider, game.physics.mouse)) {
+        if (game.wasMouseButtonReleased(0) && game.physics.gjk(container2Collider, game.physics.mouse)) {
             if (onClick) {
                 onClick();   // run custom action
             } else {
