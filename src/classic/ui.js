@@ -472,7 +472,7 @@ export class UIManager {
         this.zlayer = -1000;
 
         // Root element (screen)
-        this.root = this.spawnAnchor(game.canvas.width, game.canvas.height, [0,0.05,0,1])
+        this.root = this.spawnAnchor(game.canvas.width, game.canvas.height, [0,0.06,0,0.94 ])
         this.root.entity.registerCall("refreshUI", () => {
             this.root.setSize(game.canvas.width, game.canvas.height)
         });
@@ -605,7 +605,7 @@ export class UIManager {
             elemCollider.updateRect();
         });
 
-        // Optional: update polygon verts if element size changes
+        // update polygon verts if element size changes
         elem.entity.registerCall("refreshUI", () => {
             const newVerts = [
                 [0, 0, 0],

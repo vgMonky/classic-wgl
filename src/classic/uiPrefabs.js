@@ -7,55 +7,47 @@ import {UIManager} from "/classic/ui.js";
 // h-succses = succses hue (green)
 // *we need a util func hslaToRgba(h,s,l,a) in UIManager and maybe directlly input hsla in all elements construction
 
-// text size variables
-let tHuge = 1.6 // huge
-let tBig = 0.8 // big
-let tMid = 0.6 // normal
+// text scale variables
+let tHuge = 1.8 // huge
+let tBig = 1 // big
+let tMid = 0.5 // normal
 let tSmall = 0.4 // small
-let tTiny = 0.25 // tinny
- 
-
 
 export function initUI() {
     // init UIManager
     let UI = new UIManager(game);
 
-    // add components
-    initTopBar(UI)
+    // define sideMenuState
+    let sideMenuOpen = false
 
-    // Main View
-    let group = UI.spawnArray(true, "left", 2, [0,0,0,0])
-    let btn = initBtn(UI, "start", 1)
-    let btn2 = initBtn(UI, "settings", 0.6)
-    let btn3 = initBtn(UI, "donate", 0.6)
-    group.addChild(btn)
-    group.addChild(btn2)
-    group.addChild(btn3)
-    UI.root.addChild(group, "mid-center", "mid-center")
+    // add components
+    let toggleMenu = initSideMenu(UI)
+    initTopBar(UI, toggleMenu)
 
 }
 
-function initTopBar(UIManager) {
+function initTopBar(UIManager, toggleMenu) {
     let UI = UIManager
     // a container with full width at the top
     // must have: FPScounter, tittle text, menu button.
     // must update based on screen width breakpoints
 
-    let topBarContainer = UI.spawnAnchor(undefined, undefined, [0,0.1,0,1])
+    let topBarContainer = UI.spawnAnchor(undefined, undefined, [0,0.08,0,1])
     UI.root.addChild(topBarContainer, "top-center", "top-center")
     // instantiate sub-parts
     let FPS = initFPS(UI)
     let MenuBtn = initBtn(UI, "menu", tMid, () => {
-        console.log("menu");
+        toggleMenu()
     });
-    let title = UI.spawnText("Classic Engine + UI", undefined, 1000, [0,0.6,0,1])
+    let title = UI.spawnText("Classic Engine + UI", undefined, 1000, [0,0.6,0,1], [0,0,0,0])
+    // set positions
     topBarContainer.addChild(FPS, "mid-left", "mid-left")
     topBarContainer.addChild(MenuBtn, "mid-right", "mid-right")
     topBarContainer.addChild(title, "mid-center", "mid-center")
     
     // update size
     UI.root.entity.registerCall("refreshUI", () => {
-        topBarContainer.setSize(UI.root.width, FPS.height);
+        topBarContainer.setSize(UI.root.width, FPS.height + 15);
         // mobile
         if (UI.root.width < 700) {
             title.setTextScale(tSmall);
@@ -99,6 +91,77 @@ function initFPS(UIManager) {
     return FPSContainer
 }
 
+// function initSideMenu that uses initMenuContent internally
+function initSideMenu(UIManager) {
+    // Static comp
+    let UI = UIManager
+    let overlay = UI.spawnAnchor(UI.root.width, UI.root.height, [0,0.05,0,0.92])
+    UI.root.addChild(overlay, "top-left", "top-left")
+    let sideContainer = UI.spawnAnchor(200, UI.root.height)
+    UI.root.addChild(sideContainer, "top-right", "top-right")
+    let content = initMenuContent(UI)
+    sideContainer.addChild(content, "top-left", "top-left")
+
+    // Dynamic comp
+    let overlayCollider = UI.addColliderToElem(overlay);
+    let isOpen = false
+
+    UI.root.entity.registerCall("refreshUI", () => {
+        // idle
+        overlay.setSize(UI.root.width-sideContainer.width, UI.root.height)
+        sideContainer.setSize(sideContainer.width, UI.root.height)
+        overlay.setColor([0,0.05,0,0.92]);
+        // hover
+        if (game.physics.gjk(overlayCollider, game.physics.mouse)) {
+            overlay.setColor([0,0,0,0]);
+        }
+        // click
+        if (game.wasMouseButtonReleased(0) && game.physics.gjk(overlayCollider, game.physics.mouse)) {
+            if (isOpen) {
+                console.log("closing menu")
+                isOpen = false
+            }
+        }
+    });
+    UI.root.entity.registerCall("refreshUI", () => {
+        // in open state
+        if (isOpen) {
+            sideContainer.setColor([0,0.1,0,1])
+            sideContainer.setSize(200, UI.root.height)
+        }
+        // in close state
+        else {
+            sideContainer.setSize(0)
+            overlay.setColor([0,0,0,0])
+            overlay.setSize(0,0)
+        }
+    });
+
+    function toggle() {
+        isOpen = !isOpen
+        console.log(isOpen ? "open menu..." : "close menu...");
+    }
+
+    return toggle
+}
+// ...
+function initMenuContent(UIManager) {
+    let UI = UIManager
+    let container = UI.spawnPadding([56,36,36,18],[0,0.1,0,0]) 
+    let group = UI.spawnArray(true, "left", 2, [0,0,0,0])
+    container.addChild(group)
+    let btn = initBtn(UI, "init", tMid)
+    let btn2 = initBtn(UI, "alpha", tMid)
+    let btn3 = initBtn(UI, "beta", tMid)
+    let btn4 = initBtn(UI, "invest", tMid)
+    group.addChild(btn)
+    group.addChild(btn2)
+    group.addChild(btn3)
+    group.addChild(btn4)
+
+    return container
+}
+
 
 // Base components - generic reusable components:
 // generic button 
@@ -109,7 +172,6 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
     let container = UI.spawnPadding([8, 8, 8, 8], [0, 0.15, 0, 0]);
     let text = UI.spawnText(txt.toString(), txtSize, 200, [0, 0.7, 0, 1], [0, 0.15, 0, 0]);
     container.addChild(text);
-    UI.root.addChild(container, "top-right", "top-right");
 
     // Dynamic comp
     let container2Collider = UI.addColliderToElem(container);
@@ -118,24 +180,21 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
     UI.root.entity.registerCall("refreshUI", () => {
         // idle
         text.setTextColor([UI.newSine(0, 0.4, speed), UI.newSine(0.6, 0.9, speed), 0, 1]);
+        container.setColor([0, 0.15, 0, 0]);
 
         // hover
         if (game.physics.gjk(container2Collider, game.physics.mouse)) {
             container.setColor([0, UI.newSine(0.5, 0.8, speed), 0, 1]);
             text.setTextColor([0, 0.1, 0, 1]);
-        } else {
-            container.setColor([0, 0.15, 0, 0]);
         }
-    });
-
-    // click
-    container2Collider.addHandler("click", () => {
-        if (onClick) {
-            onClick();   // run custom action
-        } else {
-            console.log("clicked!!!");
+        // click
+        if (game.wasMouseButtonPressed(0) && game.physics.gjk(container2Collider, game.physics.mouse)) {
+            if (onClick) {
+                onClick();   // run custom action
+            } else {
+                console.log("clicked!!!");
+            }
         }
-        return true; // returning true stops propagation
     });
 
     return container;
