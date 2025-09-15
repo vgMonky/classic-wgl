@@ -21,7 +21,8 @@ function toggleSideMenu() {
     console.log(sideMenuIsOpen ? "Menu opened" : "Menu closed");
 }
 // --- mainView state and actions ---
-//...
+// let viewState = "init" | "alpha" | "beta" | "invest"
+// function setView(name){ viewState = name}
 
 // Define main init func for this first example
 export function initUI() {
@@ -71,7 +72,7 @@ function initTopBar(UIManager) {
         }
     });    
 }
- 
+
 function initFPS(UIManager) {
     let UI = UIManager
     // Static comp
@@ -130,26 +131,38 @@ function initSideMenu(UIManager) {
         // in open state
         if (sideMenuIsOpen==true) {
             sideContainer.setColor([0,0.1,0,1])
-            sideContainer.setSize(200, UI.root.height)
+            sideContainer.setSize(UI.interpolation(sideContainer.width, 200, 5), UI.root.height)
         }
         // in close state
         else {
-            sideContainer.setSize(0)
+            sideContainer.setSize(UI.interpolation(sideContainer.width, 0, 5), UI.root.height);
             overlay.setColor([0,0,0,0])
             overlay.setSize(0,0)
         }
     });
 }
-// ...
+
 function initMenuContent(UIManager) {
     let UI = UIManager
     let container = UI.spawnPadding([56,36,36,18],[0,0.1,0,0]) 
     let group = UI.spawnArray(true, "left", 2, [0,0,0,0])
     container.addChild(group)
-    let btn = initBtn(UI, "init", tMid)
-    let btn2 = initBtn(UI, "alpha", tMid)
-    let btn3 = initBtn(UI, "beta", tMid)
-    let btn4 = initBtn(UI, "invest", tMid)
+    let btn = initBtn(UI, "init", tMid, () => {
+        console.log("init view...")
+        toggleSideMenu()
+    })
+    let btn2 = initBtn(UI, "alpha", tMid, () => {
+        console.log("alpha view...")
+        toggleSideMenu()
+    })
+    let btn3 = initBtn(UI, "beta", tMid, () => {
+        console.log("beta view...")
+        toggleSideMenu()
+    })
+    let btn4 = initBtn(UI, "invest", tMid, () => {
+        console.log("invest view...")
+        toggleSideMenu()
+    })
     group.addChild(btn)
     group.addChild(btn2)
     group.addChild(btn3)

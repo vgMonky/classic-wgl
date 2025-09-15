@@ -623,6 +623,11 @@ export class UIManager {
 
         return elemCollider;
     }
+
+    interpolation(current, target, speed = 10) {
+        // simple linear interpolation
+        return current + (target - current) * Math.min(speed * game.deltaTime, 1);
+    }
 }    
 
 // Test Example, not updated atm
