@@ -8,8 +8,8 @@ import {UIManager} from "/classic/ui.js";
 // h-succses = succses hue (green)
 // ***we need a util func hslaToRgba(h,s,l,a) in UIManager and maybe directlly input hsla in all elements construction
 // --- Text scale variables ---
-let tHuge = 1.8 // huge
-let tBig = 1 // big
+let tHuge = 1.6 // huge
+let tBig = 0.8 // big
 let tMid = 0.5 // normal
 let tSmall = 0.4 // small
 
@@ -21,8 +21,8 @@ function toggleSideMenu() {
     console.log(sideMenuIsOpen ? "Menu opened" : "Menu closed");
 }
 // --- mainView state and actions ---
-// let viewState = "init" | "alpha" | "beta" | "invest"
-// function setView(name){ viewState = name}
+let viewState = "init" | "alpha" | "beta" | "invest"
+function setView(name){ viewState = name}
 
 // Define main init func for this first example
 export function initUI() {
@@ -31,8 +31,8 @@ export function initUI() {
 
     // add components
     initTopBar(UI)
+    initMainView(UI)
     initSideMenu(UI)
-    // initMainView()
 }
 
 function initTopBar(UIManager) {
@@ -53,7 +53,7 @@ function initTopBar(UIManager) {
     
     // make reactive based on screen breakpoints
     UI.root.entity.registerCall("refreshUI", () => {
-        topBarContainer.setSize(UI.root.width, FPS.height + 15);
+        topBarContainer.setSize(UI.root.width, FPS.height);
         // mobile
         if (UI.root.width < 700) {
             title.setTextScale(tSmall);
@@ -68,7 +68,7 @@ function initTopBar(UIManager) {
         else {
             title.setTextScale(tBig);
             title.setText("Classic Engine + UI");
-
+            topBarContainer.setSize(UI.root.width, FPS.height + 15);
         }
     });    
 }
@@ -76,7 +76,7 @@ function initTopBar(UIManager) {
 function initFPS(UIManager) {
     let UI = UIManager
     // Static comp
-    let FPSContainer = UI.spawnPadding([8,8,8,8], [0,0,0,0])
+    let FPSContainer = UI.spawnPadding([10,20,10,20], [0,0,0,0])
     let FPSText = UI.spawnText("FPS", tMid)
     FPSContainer.addChild(FPSText)
     UI.root.addChild(FPSContainer, "top-left", "top-left")
@@ -171,6 +171,33 @@ function initMenuContent(UIManager) {
     return container
 }
 
+function initMainView(UIManager) {
+    let UI = UIManager
+    let container = UI.spawnPadding([20,20,20,20], [0,0.08,0,0.98])
+    UI.root.addChild(container)
+
+    // init each view...
+    let view0 = initInitView(UI)
+    container.addChild(view0)
+    // let view1 = ...
+    // let view2 = ...
+    // let view3 = ...
+
+}
+
+function initInitView(UIManager) {
+    let UI = UIManager
+    let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
+    UI.root.addChild(array)
+    let iso = UI.spawnSprite(undefined, 200, 200, 2, [4,4], [0,0.2,0,0])
+    let title = UI.spawnText("SKYGPU", tHuge, 1000, undefined, [0,0,0,0])
+    let desc = UI.spawnText("decentralized network", tMid, 1000, undefined, [0,0,0,0])
+    array.addChild(iso)
+    array.addChild(title)
+    array.addChild(desc)
+
+    return array
+}
 
 // Base components - generic reusable components:
 // generic button 
@@ -178,7 +205,7 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
     let UI = UIManager;
 
     // Static comp
-    let container = UI.spawnPadding([8, 8, 8, 8], [0, 0.15, 0, 0]);
+    let container = UI.spawnPadding([10, 20, 10, 20], [0, 0.15, 0, 0]);
     let text = UI.spawnText(txt.toString(), txtSize, 200, [0, 0.7, 0, 1], [0, 0.15, 0, 0]);
     container.addChild(text);
 

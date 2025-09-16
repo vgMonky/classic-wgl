@@ -458,7 +458,7 @@ class UIPadding extends UIElement {
 // UIPanel: Container element that has a specific size, making the inner content
 //          only render what fits in the panel. It should include scroll
 //          behaiviour and scroll bar if inner content excedes the panel size.
-// class UIPanel extends UIElement {
+// class UIPanel extends UIElement {...
 
 
 
@@ -556,13 +556,21 @@ export class UIManager {
         return `ui-${this.indexCounter++}-${type}`;
     }
 
-    destroyElement(name) {
-        const element = this.elements.get(name);
-        if (element) {
-            this.game.destroyEntity(element.entity);
-            this.elements.delete(name);
+    destroyElement(element) {
+        // Recursively destroy children if any
+        if (element.children) {
+            for (const child of element.children) {
+                // UIAnchor keeps {child, selfAnchor, childAnchor}, others keep child directly
+                this.destroyElement(child.child || child);
+            }
         }
-    }
+        if (element.child) { // UIPadding has a single child
+            this.destroyElement(element.child);
+        }
+    
+        this.elements.delete(element.name);
+        this.game.destroyEntity(element.entity);
+    }    
 
     clearAll() {
         for (const [name, element] of this.elements.entries()) {
