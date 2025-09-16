@@ -118,7 +118,7 @@ function initSideMenu(UIManager) {
         overlay.setColor([0,0.05,0,0.92]);
         // hover
         if (game.physics.gjk(overlayCollider, game.physics.mouse)) {
-            overlay.setColor([0,0,0,0]);
+            overlay.setColor([0.05, 0, 0, 0.92]);
         }
         // click
         if (game.wasMouseButtonReleased(0) && game.physics.gjk(overlayCollider, game.physics.mouse)) {
@@ -131,11 +131,11 @@ function initSideMenu(UIManager) {
         // in open state
         if (sideMenuIsOpen==true) {
             sideContainer.setColor([0,0.1,0,1])
-            sideContainer.setSize(UI.interpolation(sideContainer.width, 200, 5), UI.root.height)
+            sideContainer.setSize(UI.interpolation(sideContainer.width, 200), UI.root.height)
         }
         // in close state
         else {
-            sideContainer.setSize(UI.interpolation(sideContainer.width, 0, 5), UI.root.height);
+            sideContainer.setSize(UI.interpolation(sideContainer.width, 0), UI.root.height);
             overlay.setColor([0,0,0,0])
             overlay.setSize(0,0)
         }

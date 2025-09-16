@@ -571,14 +571,6 @@ export class UIManager {
         this.elements.clear();
     }
 
-    newSine(min, max, speed = 1000, offset = 0) {
-        // speed = duration of one full sine cycle in ms
-        // offset = phase shift (optional, defaults to 0)
-        const t = Date.now() / speed + offset;
-        const sine = Math.sin(t); // oscillates between -1 and 1
-        return min + (sine + 1) / 2 * (max - min);
-    }
-
     addColliderToElem(elem) {
         // 1. Create polygon shape
         const elemVerts = [
@@ -624,10 +616,33 @@ export class UIManager {
         return elemCollider;
     }
 
-    interpolation(current, target, speed = 10) {
-        // simple linear interpolation
-        return current + (target - current) * Math.min(speed * game.deltaTime, 1);
+    newSine(min, max, speed = 1000, offset = 0) {
+        // speed = duration of one full sine cycle in ms
+        // offset = phase shift (optional, defaults to 0)
+        const t = Date.now() / speed + offset;
+        const sine = Math.sin(t); // oscillates between -1 and 1
+        return min + (sine + 1) / 2 * (max - min);
     }
+
+    interpolation(current, target, speed = 10, snapThreshold = 0.5, easing = true) {
+        // how far we need to move this frame
+        let t = Math.min(speed * game.deltaTime, 1);
+    
+        // optional ease in/out (smoothstep)
+        if (easing) {
+            t = t * t * (3 - 2 * t); // smoothstep curve
+        }
+    
+        const value = current + (target - current) * t;
+    
+        // snap to target if we're very close (avoids jitter)
+        if (Math.abs(value - target) < snapThreshold) {
+            return target;
+        }
+    
+        return value;
+    }
+    
 }    
 
 // Test Example, not updated atm
