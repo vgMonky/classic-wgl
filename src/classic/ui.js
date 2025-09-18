@@ -23,6 +23,8 @@ class UIElement {
         this.height = height;
         this.position = [0, 0];
         this.color = color;
+        this.visible = true
+        this.enebled = true
 
         // Spawn the entity
         this.entity = game.spawnEntity(name);
@@ -60,6 +62,32 @@ class UIElement {
         this.rectangle.color = this.color;
         return this;
     }
+
+    setVisible(flag) {
+        this.visible = flag;
+    
+        // Propagate to base components
+        if (this.rectangle) this.rectangle.visible = flag;
+        if (this.spriteComp) this.spriteComp.visible = flag;
+        if (this.textComps) this.textComps.forEach(t => t.visible = flag);
+    
+        // Propagate to children (different container types)
+        if (this.children) {
+            for (const entry of this.children) {
+                const child = entry.child || entry; // UIAnchor stores {child, ...}, UIArray stores child directly
+                if (child.setVisible) {
+                    child.setVisible(flag);
+                }
+            }
+        }
+    
+        if (this.child && this.child.setVisible) {
+            this.child.setVisible(flag); // UIPadding has a single child
+        }
+    
+        return this;
+    }
+    
 }
 
 class UIText extends UIElement {
@@ -428,7 +456,7 @@ class UIPadding extends UIElement {
         return this;
     }
 
-    setChildrenPos() {
+    setChildrenPos() {        
         if (!this.child) return;
 
         const [top, right, bottom, left] = this.padding;
@@ -601,6 +629,8 @@ export class UIManager {
 
         // 3. Update collider position automatically on UI refresh
         elem.entity.registerCall("refreshUI", () => {
+            elemCollider.active = elem.visible && elem.enabled;
+            if (!elemCollider.active) return;
             elemShape.position = [elem.position[0], elem.position[1], 0];
             elemCollider.updateRect();
         });

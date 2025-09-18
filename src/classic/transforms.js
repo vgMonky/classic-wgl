@@ -36,13 +36,14 @@ class Drawable extends Transform {
         entity, position, scale
     ) {
         super(entity, position, scale);
-
+        this.visible = true; 
         entity.registerCall("renderList", this.renderOrder.bind(this));
     }
 
     renderOrder() { this.game.renderList.push(this); }
 
     rawDraw() {
+        if (!this.visible) return; // skip rendering completely
         throw "Abstract method must be overwritten";
     }
 
@@ -68,6 +69,8 @@ class Rectangle extends Drawable {
     }
 
     rawDraw() {
+        if (!this.visible) return; // skip rendering completely
+
         this.game.buffers.quad.verts.bind();
         this.gl.vertexAttribPointer(
             this.game.shaders.solid.attr.vertexPos,
@@ -161,6 +164,8 @@ class Sprite extends Drawable {
     }
 
     rawDraw() {
+        if (!this.visible) return; // skip rendering completely
+
         // Verts
         this.game.buffers.quad.verts.bind();
         this.gl.vertexAttribPointer(

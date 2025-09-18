@@ -21,8 +21,8 @@ function toggleSideMenu() {
     console.log(sideMenuIsOpen ? "Menu opened" : "Menu closed");
 }
 // --- mainView state and actions ---
-let viewState = "init" | "alpha" | "beta" | "invest"
-function setView(name){ viewState = name}
+let viewState = 0 //
+function setView(index) {viewState = index}
 
 // Define main init func for this first example
 export function initUI() {
@@ -173,31 +173,80 @@ function initMenuContent(UIManager) {
 
 function initMainView(UIManager) {
     let UI = UIManager
-    let container = UI.spawnPadding([20,20,20,20], [0,0.08,0,0.98])
-    UI.root.addChild(container)
+    let pad = UI.spawnPadding([20,20,20,20], [0,0.08,0,0.98])
+    let container = UI.spawnArray(true, "center", 0, [0,0,0,0])
+    pad.addChild(container)
+    UI.root.addChild(pad)
+    
 
     // init each view...
-    let view0 = initInitView(UI)
-    container.addChild(view0)
-    // let view1 = ...
-    // let view2 = ...
-    // let view3 = ...
+    let v0 = init00(UI)
+    container.addChild(v0)
+    let v1 = init01(UI)
+    container.addChild(v1)
+    let v2 = init02(UI)
+    container.addChild(v2)
+    let v3 = init03(UI)
+    container.addChild(v3)
 
+    container.setVisible(false)
+    container.setVisible(true)
+
+    // if viewState whatever, show whatever and hide all the others
+    // Maybe we should have some setVisible(false) 
+    let tester = UI.spawnAnchor(50,50,[1,0,0,1])
+    UI.root.addChild(tester)
+    tester.setVisible(false)
+    //container.setVisible(false)
 }
 
-function initInitView(UIManager) {
+function init00(UIManager) {
     let UI = UIManager
-    let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
+    let array = UI.spawnArray(true, "center", 6, [1,0,0,0])
     UI.root.addChild(array)
     let iso = UI.spawnSprite(undefined, 200, 200, 2, [4,4], [0,0.2,0,0])
     let title = UI.spawnText("SKYGPU", tHuge, 1000, undefined, [0,0,0,0])
-    let desc = UI.spawnText("decentralized network", tMid, 1000, undefined, [0,0,0,0])
+    let desc = UI.spawnText("decentralized network", tMid, 500, undefined, [0,0,0,0])
     array.addChild(iso)
     array.addChild(title)
     array.addChild(desc)
 
+    //iso.setVisible(false)
+    //iso.setSize(0,0)
+    // title.setVisible(false)
+    //array.setVisible(false)
+    // iso.setVisible(true)
+
     return array
 }
+function init01(UIManager) {
+    let UI = UIManager
+    let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
+    UI.root.addChild(array)
+    let title = UI.spawnText("alpha view", tBig, 1000, undefined, [0,0,0,0])
+    array.addChild(title)
+
+    return array
+}
+function init02(UIManager) {
+    let UI = UIManager
+    let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
+    UI.root.addChild(array)
+    let title = UI.spawnText("beta view", tBig, 1000, undefined, [0,0,0,0])
+    array.addChild(title)
+
+    return array
+}
+function init03(UIManager) {
+    let UI = UIManager
+    let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
+    UI.root.addChild(array)
+    let title = UI.spawnText("invest view", tBig, 1000, undefined, [0,0,0,0])
+    array.addChild(title)
+
+    return array
+}
+
 
 // Base components - generic reusable components:
 // generic button 
