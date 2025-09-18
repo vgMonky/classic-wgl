@@ -21,7 +21,7 @@ function toggleSideMenu() {
     console.log(sideMenuIsOpen ? "Menu opened" : "Menu closed");
 }
 // --- mainView state and actions ---
-let viewState = 0 //
+let viewState = 0
 function setView(index) {viewState = index}
 
 // Define main init func for this first example
@@ -34,7 +34,7 @@ export function initUI() {
     initMainView(UI)
     initSideMenu(UI)
 
-    //UI.root.setEnabled(false)
+    //UI.root.setEnabled(false) //skip all recurive
 }
 
 function initTopBar(UIManager) {
@@ -153,18 +153,22 @@ function initMenuContent(UIManager) {
     container.addChild(group)
     let btn = initBtn(UI, "init", tMid, () => {
         console.log("init view...")
+        setView(0)
         toggleSideMenu()
     })
     let btn2 = initBtn(UI, "alpha", tMid, () => {
         console.log("alpha view...")
+        setView(1)
         toggleSideMenu()
     })
     let btn3 = initBtn(UI, "beta", tMid, () => {
         console.log("beta view...")
+        setView(2)
         toggleSideMenu()
     })
     let btn4 = initBtn(UI, "invest", tMid, () => {
         console.log("invest view...")
+        setView(3)
         toggleSideMenu()
     })
     group.addChild(btn)
@@ -194,10 +198,20 @@ function initMainView(UIManager) {
     container.addChild(v3)
 
     // if viewState whatever, show whatever and hide all the others
-    // Maybe we should have some setEnabled(false) 
-    //pad.setEnabled(false) // works recursive
-    //v0.setEnabled(false)    
-    //v0.setEnabled(true)    
+    UI.root.entity.registerCall("refreshUI", () => {
+        if (viewState == 0) {vSet(v0)}
+        if (viewState == 1) {vSet(v1)}
+        if (viewState == 2) {vSet(v2)}
+        if (viewState == 3) {vSet(v3)}
+    })
+
+    function vSet(v){
+        v0.setEnabled(false)
+        v1.setEnabled(false)
+        v2.setEnabled(false)
+        v3.setEnabled(false)
+        v.setEnabled(true)
+    }
 }
 
 function init00(UIManager) {

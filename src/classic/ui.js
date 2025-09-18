@@ -80,39 +80,7 @@ class UIElement {
         }
 
         return this;
-    } 
-
-    // setVisible(flag) {
-    //     this.visible = flag;
-    
-    //     // Base components
-    //     if (this.rectangle) this.rectangle.visible = flag;
-    //     if (this.spriteComp) this.spriteComp.visible = flag;
-    //     if (this.textComps) this.textComps.forEach(t => t.visible = flag);
-    //     if (this.collider) this.collider.active = flag;
-        
-    //     // Children
-    //     if (this.children) {
-    //         for (const entry of this.children) {
-    //             const child = entry.child || entry;
-    //             if (child.setVisible) {
-    //                 child.setVisible(flag);
-    //             }
-    //         }
-    //     }
-    //     if (this.child && this.child.setVisible) {
-    //         this.child.setVisible(flag);
-    //     }
-    
-    //     // Re-enforce on refresh
-    //     this.entity.registerCall("refreshUI", () => {
-    //         if (this.rectangle) this.rectangle.visible = this.visible;
-    //         if (this.spriteComp) this.spriteComp.visible = this.visible;
-    //         if (this.textComps) this.textComps.forEach(t => t.visible = this.visible);
-    //     });
-    
-    //     return this;
-    // }   
+    }   
 }
 
 class UIText extends UIElement {
