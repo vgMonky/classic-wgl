@@ -33,6 +33,8 @@ export function initUI() {
     initTopBar(UI)
     initMainView(UI)
     initSideMenu(UI)
+
+    //UI.root.setEnabled(false)
 }
 
 function initTopBar(UIManager) {
@@ -194,8 +196,8 @@ function initMainView(UIManager) {
     // if viewState whatever, show whatever and hide all the others
     // Maybe we should have some setEnabled(false) 
     //pad.setEnabled(false) // works recursive
-    v0.setEnabled(false)
-    
+    //v0.setEnabled(false)    
+    //v0.setEnabled(true)    
 }
 
 function init00(UIManager) {

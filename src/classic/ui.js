@@ -10,7 +10,7 @@ import { vec3 } from "/lib/gl-matrix/index.js";
 //     from this other elements can be extended ---
 
 // A UIElement is just an entity with a rectangle component,
-// its just an object that ocupies some space in the screen
+// its just an object that ocupies some 2d space in the screen
 class UIElement {
     constructor(
         name, //: string
@@ -81,6 +81,38 @@ class UIElement {
 
         return this;
     } 
+
+    // setVisible(flag) {
+    //     this.visible = flag;
+    
+    //     // Base components
+    //     if (this.rectangle) this.rectangle.visible = flag;
+    //     if (this.spriteComp) this.spriteComp.visible = flag;
+    //     if (this.textComps) this.textComps.forEach(t => t.visible = flag);
+    //     if (this.collider) this.collider.active = flag;
+        
+    //     // Children
+    //     if (this.children) {
+    //         for (const entry of this.children) {
+    //             const child = entry.child || entry;
+    //             if (child.setVisible) {
+    //                 child.setVisible(flag);
+    //             }
+    //         }
+    //     }
+    //     if (this.child && this.child.setVisible) {
+    //         this.child.setVisible(flag);
+    //     }
+    
+    //     // Re-enforce on refresh
+    //     this.entity.registerCall("refreshUI", () => {
+    //         if (this.rectangle) this.rectangle.visible = this.visible;
+    //         if (this.spriteComp) this.spriteComp.visible = this.visible;
+    //         if (this.textComps) this.textComps.forEach(t => t.visible = this.visible);
+    //     });
+    
+    //     return this;
+    // }   
 }
 
 class UIText extends UIElement {
@@ -329,6 +361,8 @@ class UIAnchor extends UIElement {
         const [panelX, panelY] = this.position;
 
         for (const { child, selfAnchor, childAnchor } of this.children) {
+            if (!child.entity.enabled) continue;  // <-- skip disabled elements
+
             const panelOffset = this.getAnchorOffset(selfAnchor, this.width, this.height);
             const childOffset = this.getAnchorOffset(childAnchor, child.width, child.height);
 
@@ -377,6 +411,8 @@ class UIArray extends UIElement {
         let maxCross = 0;
     
         for (const child of this.children) {
+            if (!child.entity.enabled) continue;  // <-- skip disabled elements
+
             const main = isVertical ? child.height : child.width;
             const cross = isVertical ? child.width : child.height;
             totalMain += main + this.spacing;
@@ -395,6 +431,8 @@ class UIArray extends UIElement {
         let offset = 0;
     
         for (const child of this.children) {
+            if (!child.entity.enabled) continue;  // <-- skip disabled elements
+
             const main = isVertical ? child.height : child.width;
             const cross = isVertical ? child.width : child.height;
     
@@ -450,7 +488,7 @@ class UIPadding extends UIElement {
     }
 
     setChildrenPos() {        
-        if (!this.child) return;
+        if (!this.child && this.child.entity.enabled) return;
 
         const [top, right, bottom, left] = this.padding;
 
