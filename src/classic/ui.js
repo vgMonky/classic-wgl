@@ -63,31 +63,24 @@ class UIElement {
         return this;
     }
 
-    setVisible(flag) {
-        this.visible = flag;
-    
-        // Propagate to base components
-        if (this.rectangle) this.rectangle.visible = flag;
-        if (this.spriteComp) this.spriteComp.visible = flag;
-        if (this.textComps) this.textComps.forEach(t => t.visible = flag);
-    
-        // Propagate to children (different container types)
+    setEnabled(flag) {
+        this.entity.enabled = flag;
+
+        // cascade to children
         if (this.children) {
             for (const entry of this.children) {
-                const child = entry.child || entry; // UIAnchor stores {child, ...}, UIArray stores child directly
-                if (child.setVisible) {
-                    child.setVisible(flag);
+                const child = entry.child || entry;
+                if (child.setEnabled) {
+                    child.setEnabled(flag);
                 }
             }
         }
-    
-        if (this.child && this.child.setVisible) {
-            this.child.setVisible(flag); // UIPadding has a single child
+        if (this.child && this.child.setEnabled) {
+            this.child.setEnabled(flag);
         }
-    
+
         return this;
-    }
-    
+    } 
 }
 
 class UIText extends UIElement {
@@ -629,8 +622,6 @@ export class UIManager {
 
         // 3. Update collider position automatically on UI refresh
         elem.entity.registerCall("refreshUI", () => {
-            elemCollider.active = elem.visible && elem.enabled;
-            if (!elemCollider.active) return;
             elemShape.position = [elem.position[0], elem.position[1], 0];
             elemCollider.updateRect();
         });

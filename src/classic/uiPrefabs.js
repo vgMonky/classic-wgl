@@ -70,7 +70,9 @@ function initTopBar(UIManager) {
             title.setText("Classic Engine + UI");
             topBarContainer.setSize(UI.root.width, FPS.height + 15);
         }
-    });    
+    });  
+    
+    
 }
 
 function initFPS(UIManager) {
@@ -189,15 +191,11 @@ function initMainView(UIManager) {
     let v3 = init03(UI)
     container.addChild(v3)
 
-    container.setVisible(false)
-    container.setVisible(true)
-
     // if viewState whatever, show whatever and hide all the others
-    // Maybe we should have some setVisible(false) 
-    let tester = UI.spawnAnchor(50,50,[1,0,0,1])
-    UI.root.addChild(tester)
-    tester.setVisible(false)
-    //container.setVisible(false)
+    // Maybe we should have some setEnabled(false) 
+    //pad.setEnabled(false) // works recursive
+    v0.setEnabled(false)
+    
 }
 
 function init00(UIManager) {
@@ -210,12 +208,6 @@ function init00(UIManager) {
     array.addChild(iso)
     array.addChild(title)
     array.addChild(desc)
-
-    //iso.setVisible(false)
-    //iso.setSize(0,0)
-    // title.setVisible(false)
-    //array.setVisible(false)
-    // iso.setVisible(true)
 
     return array
 }
@@ -281,6 +273,7 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
             }
         }
     });
+
 
     return container;
 }
