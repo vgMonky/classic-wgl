@@ -8,10 +8,11 @@ import {UIManager} from "/classic/ui.js";
 // h-succses = succses hue (green)
 // ***we need a util func hslaToRgba(h,s,l,a) in UIManager and maybe directlly input hsla in all elements construction
 // --- Text scale variables ---
-let tHuge = 1.6 // huge
+let tHuge = 1.6 // very big
 let tBig = 0.8 // big
 let tMid = 0.5 // normal
 let tSmall = 0.4 // small
+let tTiny = 0.2 // very small
 
 // Define global UI state, could go on a uiState.js file
 // --- sideMenu state and actions ---
@@ -152,22 +153,18 @@ function initMenuContent(UIManager) {
     let group = UI.spawnArray(true, "left", 2, [0,0,0,0])
     container.addChild(group)
     let btn = initBtn(UI, "init", tMid, () => {
-        console.log("init view...")
         setView(0)
         toggleSideMenu()
     })
-    let btn2 = initBtn(UI, "alpha", tMid, () => {
-        console.log("alpha view...")
+    let btn2 = initBtn(UI, "skygpu", tMid, () => {
         setView(1)
         toggleSideMenu()
     })
-    let btn3 = initBtn(UI, "beta", tMid, () => {
-        console.log("beta view...")
+    let btn3 = initBtn(UI, "gameover", tMid, () => {
         setView(2)
         toggleSideMenu()
     })
     let btn4 = initBtn(UI, "invest", tMid, () => {
-        console.log("invest view...")
         setView(3)
         toggleSideMenu()
     })
@@ -181,24 +178,31 @@ function initMenuContent(UIManager) {
 
 function initMainView(UIManager) {
     let UI = UIManager
+    let container = UI.spawnAnchor(1, 1, [1,1,1,0])
     let pad = UI.spawnPadding([20,20,20,20], [0,0.08,0,0.98])
-    let container = UI.spawnArray(true, "center", 0, [0,0,0,0])
-    pad.addChild(container)
-    UI.root.addChild(pad)
+    let array = UI.spawnArray(true, "center", 0, [0,0,0,0])
+    let tag = UI.spawnText("view title", tTiny, 200, [1,1,1,0.5], [0,0,0,0])
+    pad.addChild(array)
+    container.addChild(pad)
+    container.addChild(tag, "bot-right", "top-right")
+    UI.root.addChild(container)
     
 
+    
     // init each view...
     let v0 = init00(UI)
-    container.addChild(v0)
-    let v1 = init01(UI)
-    container.addChild(v1)
-    let v2 = init02(UI)
-    container.addChild(v2)
-    let v3 = init03(UI)
-    container.addChild(v3)
+    array.addChild(v0)
+    let v1 = init01(UI).setEnabled(false)
+    array.addChild(v1)
+    let v2 = init02(UI).setEnabled(false)
+    array.addChild(v2)
+    let v3 = init03(UI).setEnabled(false)
+    array.addChild(v3)
 
-    // if viewState whatever, show whatever and hide all the others
+    let prevView = v0
     UI.root.entity.registerCall("refreshUI", () => {
+        container.setSize(pad.width - 2, pad.height + 8)
+
         if (viewState == 0) {vSet(v0)}
         if (viewState == 1) {vSet(v1)}
         if (viewState == 2) {vSet(v2)}
@@ -206,15 +210,29 @@ function initMainView(UIManager) {
     })
 
     function vSet(v){
-        v0.setEnabled(false)
-        v1.setEnabled(false)
-        v2.setEnabled(false)
-        v3.setEnabled(false)
+        prevView.setEnabled(false)
         v.setEnabled(true)
+        prevView = v
+        tag.setText(`view ${viewState}`)
     }
 }
 
 function init00(UIManager) {
+    let UI = UIManager
+    let array = UI.spawnArray(true, "left", 20 , [1,0,0,0])
+    UI.root.addChild(array)
+    let title = UI.spawnText("Welcome", tBig, 1000, undefined, [0,0,0,0])
+    array.addChild(title)
+    let txt = UI.spawnText(
+        "This front is constructed as a testing example of the new layout system built on top of clasic-wgl v0.1a0.",
+        tSmall, 500, undefined, [0,0,0,0])
+    array.addChild(txt)
+    
+    // arrows btn to go to the next view
+
+    return array
+}
+function init01(UIManager) {
     let UI = UIManager
     let array = UI.spawnArray(true, "left", 10, [1,0,0,0])
     let arrayH = UI.spawnArray(false, "center", 4, [1,0,0,0])
@@ -229,15 +247,6 @@ function init00(UIManager) {
     arrayH.addChild(array)
 
     return arrayH
-}
-function init01(UIManager) {
-    let UI = UIManager
-    let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
-    UI.root.addChild(array)
-    let title = UI.spawnText("alpha view", tBig, 1000, undefined, [0,0,0,0])
-    array.addChild(title)
-
-    return array
 }
 function init02(UIManager) {
     let UI = UIManager
