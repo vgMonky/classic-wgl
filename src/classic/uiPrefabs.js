@@ -216,16 +216,19 @@ function initMainView(UIManager) {
 
 function init00(UIManager) {
     let UI = UIManager
-    let array = UI.spawnArray(true, "center", 6, [1,0,0,0])
+    let array = UI.spawnArray(true, "left", 10, [1,0,0,0])
+    let arrayH = UI.spawnArray(false, "center", 4, [1,0,0,0])
     UI.root.addChild(array)
-    let iso = UI.spawnSprite(undefined, 200, 200, 2, [4,4], [0,0.2,0,0])
-    let title = UI.spawnText("SKYGPU", tHuge, 1000, undefined, [0,0,0,0])
-    let desc = UI.spawnText("decentralized network", tMid, 500, undefined, [0,0,0,0])
-    array.addChild(iso)
+    UI.root.addChild(arrayH)
+    let iso = UI.spawnSprite("skynetLogo", 110, 110, 0, [1,1], [0,0.2,0,0])
+    let title = UI.spawnText("SKYGPU.NET", tHuge, 1000, undefined, [0,0,0,0])
+    let desc = UI.spawnText("decentralized compute network", tMid, 500, undefined, [0,0,0,0])
     array.addChild(title)
     array.addChild(desc)
+    arrayH.addChild(iso)
+    arrayH.addChild(array)
 
-    return array
+    return arrayH
 }
 function init01(UIManager) {
     let UI = UIManager

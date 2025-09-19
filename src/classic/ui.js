@@ -63,7 +63,7 @@ class UIElement {
         return this;
     }
 
-    setEnabled(flag) {
+    setEnabled(flag) { // Desactivates the element's entity(render & collider) and ocupied space in the ui layout.
         this.entity.enabled = flag;
 
         // cascade to children
