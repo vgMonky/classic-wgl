@@ -76,8 +76,6 @@ function initTopBar(UIManager) {
             topBarContainer.setSize(UI.root.width, FPS.height + 15);
         }
     });  
-    
-    
 }
 
 function initFPS(UIManager) {
@@ -223,7 +221,6 @@ function initMainView(UIManager) {
 function init00(UIManager) {
     let UI = UIManager
     let array = UI.spawnArray(true, "left", 20 , [1,0,0,0])
-    UI.root.addChild(array)
     let title = UI.spawnText("Welcome", tBig, 1000, undefined, [0,0,0,0])
     array.addChild(title)
     let txt = UI.spawnText(
@@ -243,15 +240,13 @@ function init00(UIManager) {
             "_blank");
     });
     array.addChild(link2)
-
+    
     return array
 }
 function init01(UIManager) {
     let UI = UIManager
     let array = UI.spawnArray(true, "left", 10, [1,0,0,0])
     let arrayH = UI.spawnArray(false, "center", 4, [1,0,0,0])
-    UI.root.addChild(array)
-    UI.root.addChild(arrayH)
     let iso = UI.spawnSprite("skynetLogo", 110, 110, 0, [1,1], [0,0.2,0,0])
     let title = UI.spawnText("SKYGPU.NET", tHuge, 1000, undefined, [0,0,0,0])
     let desc = UI.spawnText("decentralized compute network", tMid, 500, undefined, [0,0,0,0])
@@ -274,7 +269,6 @@ function init02(UIManager) {
     content.addChild(text1)
     content.addChild(text2)
     gameover.addChild(content)
-    UI.root.addChild(gameover, "mid-center", "mid-center");
 
     let text2Collider = UI.addColliderToElem(text2)
     // test animation
@@ -303,7 +297,6 @@ function init02(UIManager) {
 function init03(UIManager) {
     let UI = UIManager
     let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
-    UI.root.addChild(array)
     let title = UI.spawnText("interactive box grid", tBig, 1000, undefined, [0,0,0,0])
     array.addChild(title)
 
@@ -325,7 +318,7 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
     let container2Collider = UI.addColliderToElem(container);
     let speed = 150;
 
-    UI.root.entity.registerCall("refreshUI", () => {
+    container.entity.registerCall("refreshUI", () => {
         // idle
         text.setTextColor([UI.newSine(0, 0.4, speed), UI.newSine(0.6, 0.9, speed), 0, 1]);
         container.setColor([0, 0.15, 0, 0]);
@@ -345,7 +338,6 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
         }
     });
 
-
     return container;
 }
 
@@ -360,9 +352,9 @@ function initLink(UIManager, txt = "link", txtSize = tSmall, onClick = null) {
 
     // Dynamic comp
     let container2Collider = UI.addColliderToElem(container);
-    let speed = 15;
+    let speed = 10;
 
-    UI.root.entity.registerCall("refreshUI", () => {
+    container.entity.registerCall("refreshUI", () => {
         // idle
         text.setTextColor([UI.newSine(0.6, 0.8, speed), 0.45, 0, 1]);
         container.setColor([0, 0, 0, 0]);
@@ -381,7 +373,7 @@ function initLink(UIManager, txt = "link", txtSize = tSmall, onClick = null) {
             }
         }
     });
-
+    
     return container;
 }
 

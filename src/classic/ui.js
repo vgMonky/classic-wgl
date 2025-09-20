@@ -66,10 +66,10 @@ class UIElement {
         this.entity.enabled = flag;
 
         // cascade to children
-        // !!! Something is not working right, one of the cascades is not desactivating elemCollider well 
+        // !!! Something is not working right, padding container seems tu be the fuck up
         if (this.children) {
             for (const entry of this.children) {
-                const child = entry.child || entry;
+                const child = entry[0] || entry;
                 if (child.setEnabled) {
                     child.setEnabled(flag);
                 }

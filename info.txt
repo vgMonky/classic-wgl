@@ -1,6 +1,6 @@
-- New readible font for paragraph and small text
-- Border and border radius for rectangle component
-- [ ] Arrows for next/back viewState
+- [ ] New readible font for paragraph and small text
+- [ ] Border and border radius for rectangle component
+- [ ] Fix setEnabled() recursive error 
 - [ ] Typeing Fx for text
 - [ ] Destroy and InitComp() for view changes
 - [ ] New branch with well organized commits
