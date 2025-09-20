@@ -46,7 +46,9 @@ function initTopBar(UIManager) {
     // instantiate sub-parts
     let FPS = initFPS(UI)
     let MenuBtn = initBtn(UI, "menu", tMid, () => {
-        toggleSideMenu()
+        if (sideMenuIsOpen == false) {
+            toggleSideMenu()
+        }
     });
     let title = UI.spawnText("Classic Engine + UI", undefined, 1000, [0,0.6,0,1], [0,0,0,0])
     // set positions
@@ -164,7 +166,7 @@ function initMenuContent(UIManager) {
         setView(2)
         toggleSideMenu()
     })
-    let btn4 = initBtn(UI, "invest", tMid, () => {
+    let btn4 = initBtn(UI, "IBG", tMid, () => {
         setView(3)
         toggleSideMenu()
     })
@@ -181,13 +183,15 @@ function initMainView(UIManager) {
     let container = UI.spawnAnchor(1, 1, [1,1,1,0])
     let pad = UI.spawnPadding([20,20,20,20], [0,0.08,0,0.98])
     let array = UI.spawnArray(true, "center", 0, [0,0,0,0])
-    let tag = UI.spawnText("view title", tTiny, 200, [1,1,1,0.5], [0,0,0,0])
+    let btn = initBtn(UI, "next", tMid, () => {
+        if (viewState <= 2){
+            viewState += 1
+        }else {viewState = 0}
+    })
     pad.addChild(array)
     container.addChild(pad)
-    container.addChild(tag, "bot-right", "top-right")
+    container.addChild(btn, "bot-center", "top-center")
     UI.root.addChild(container)
-    
-
     
     // init each view...
     let v0 = init00(UI)
@@ -201,7 +205,7 @@ function initMainView(UIManager) {
 
     let prevView = v0
     UI.root.entity.registerCall("refreshUI", () => {
-        container.setSize(pad.width - 2, pad.height + 8)
+        container.setSize(pad.width, pad.height + 40)
 
         if (viewState == 0) {vSet(v0)}
         if (viewState == 1) {vSet(v1)}
@@ -213,7 +217,6 @@ function initMainView(UIManager) {
         prevView.setEnabled(false)
         v.setEnabled(true)
         prevView = v
-        tag.setText(`view ${viewState}`)
     }
 }
 
@@ -225,10 +228,21 @@ function init00(UIManager) {
     array.addChild(title)
     let txt = UI.spawnText(
         "This front is constructed as a testing example of the new layout system built on top of clasic-wgl v0.1a0.",
-        tSmall, 500, undefined, [0,0,0,0])
+        tSmall, 450, undefined, [0,0,0,0])
     array.addChild(txt)
-    
-    // arrows btn to go to the next view
+    // clickable links for repo and main UI file...
+    let link = initLink(UI, "> UI manager file", undefined, () => {
+        window.open(
+            "https://github.com/vgMonky/classic-wgl/blob/f6969fea9be43977c3fb22f03e631191ab06e420/src/classic/ui.js",
+            "_blank");
+    });
+    array.addChild(link)
+    let link2 = initLink(UI, "> this front file", undefined, () => {
+        window.open(
+            "https://github.com/vgMonky/classic-wgl/blob/f6969fea9be43977c3fb22f03e631191ab06e420/src/classic/uiPrefabs.js",
+            "_blank");
+    });
+    array.addChild(link2)
 
     return array
 }
@@ -250,18 +264,47 @@ function init01(UIManager) {
 }
 function init02(UIManager) {
     let UI = UIManager
-    let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
-    UI.root.addChild(array)
-    let title = UI.spawnText("beta view", tBig, 1000, undefined, [0,0,0,0])
-    array.addChild(title)
+    // game over component
+    // create the elements
+    let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
+    let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
+    let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
+    let text2 = UI.spawnText("start again", 0.5, 300, undefined, [0,0.3,0,0.05])
+    // nest the elements
+    content.addChild(text1)
+    content.addChild(text2)
+    gameover.addChild(content)
+    UI.root.addChild(gameover, "mid-center", "mid-center");
 
-    return array
+    let text2Collider = UI.addColliderToElem(text2)
+    // test animation
+    UI.root.entity.registerCall("refreshUI", () => {
+        // idle
+        text1.setTextColor([UI.newSine(0.7, 0.9, 400), 0, 0, 1]);
+        text2.setColor([0, 0, 0, UI.newSine(0, 0.2, 200)]);
+        text2.setTextColor([0, UI.newSine(0.6, 0.9, 200), 0, 1]);
+        
+        // hover
+        if (game.physics.gjk(text2Collider, game.physics.mouse)) {
+            text2.setTextScale(UI.newSine(0.45, 0.50, 150))
+        } else {
+            text2.setTextScale(0.5)
+        }
+    });
+    // click
+    text2Collider.addHandler("click", () => {
+        console.log("start again clicked!!!")
+        return true; // returning true stops propagation
+    });
+    
+
+    return gameover
 }
 function init03(UIManager) {
     let UI = UIManager
     let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
     UI.root.addChild(array)
-    let title = UI.spawnText("invest view", tBig, 1000, undefined, [0,0,0,0])
+    let title = UI.spawnText("interactive box grid", tBig, 1000, undefined, [0,0,0,0])
     array.addChild(title)
 
     return array
@@ -304,4 +347,45 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
 
 
     return container;
+}
+
+// generic link 
+function initLink(UIManager, txt = "link", txtSize = tSmall, onClick = null) {
+    let UI = UIManager;
+
+    // Static comp
+    let container = UI.spawnPadding([0, 0, 0, 0], [0, 0.15, 0, 0]);
+    let text = UI.spawnText(txt.toString(), txtSize, 400, [0.7,0.4,0,1], [0, 0.15, 0, 0]);
+    container.addChild(text);
+
+    // Dynamic comp
+    let container2Collider = UI.addColliderToElem(container);
+    let speed = 15;
+
+    UI.root.entity.registerCall("refreshUI", () => {
+        // idle
+        text.setTextColor([UI.newSine(0.6, 0.8, speed), 0.45, 0, 1]);
+        container.setColor([0, 0, 0, 0]);
+
+        // hover
+        if (game.physics.gjk(container2Collider, game.physics.mouse)) {
+            container.setColor([UI.newSine(0.7, 0.9, speed), 0.45, 0, 1]);
+            text.setTextColor([0, 0.1, 0, 1]);
+        }
+        // click
+        if (game.wasMouseButtonReleased(0) && game.physics.gjk(container2Collider, game.physics.mouse)) {
+            if (onClick) {
+                onClick();   // run custom action
+            } else {
+                console.log("clicked!!!");
+            }
+        }
+    });
+
+    return container;
+}
+
+
+function initTyping(UIManager, txt = "typing text...", txtSize = tSmall, maxw, color, bgcolor) {
+
 }

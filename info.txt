@@ -3,3 +3,4 @@
 - [ ] Arrows for next/back viewState
 - [ ] Typeing Fx for text
 - [ ] Destroy and InitComp() for view changes
+- [ ] New branch with well organized commits

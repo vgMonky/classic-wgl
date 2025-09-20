@@ -23,7 +23,6 @@ class UIElement {
         this.height = height;
         this.position = [0, 0];
         this.color = color;
-        this.visible = true
         this.enebled = true
 
         // Spawn the entity
@@ -67,6 +66,7 @@ class UIElement {
         this.entity.enabled = flag;
 
         // cascade to children
+        // !!! Something is not working right, one of the cascades is not desactivating elemCollider well 
         if (this.children) {
             for (const entry of this.children) {
                 const child = entry.child || entry;
@@ -684,39 +684,7 @@ export class UIManager {
 export function testUI() {
     let UI = new UIManager(game);
 
-    // game over component
-    // create the elements
-    let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
-    let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
-    let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
-    let text2 = UI.spawnText("start again", 0.5, 300, undefined, [0,0.3,0,0.05])
-    // nest the elements
-    content.addChild(text1)
-    content.addChild(text2)
-    gameover.addChild(content)
-    root.addChild(gameover, "mid-center", "mid-center");
 
-    let text2Collider = UI.addColliderToElem(text2)
-    // test animation
-    root.entity.registerCall("refreshUI", () => {
-        // idle
-        text1.setTextColor(UI.newSine(0.7, 0.9, 400), 0, 0, 1);
-        text2.setColor(0, 0, 0, UI.newSine(0, 0.2, 200));
-        text2.setTextColor(0, UI.newSine(0.6, 0.9, 200), 0, 1);
-        
-        // hover
-        if (game.physics.gjk(text2Collider, game.physics.mouse)) {
-            text2.setTextScale(UI.newSine(0.45, 0.50, 150))
-        } else {
-            text2.setTextScale(0.5)
-        }
-    });
-    // click
-    text2Collider.addHandler("click", () => {
-        console.log("start again clicked!!!")
-        return true; // returning true stops propagation
-    });
-    
 
     // minimap component
     let minimap = UI.spawnPadding([10,10,10,10], [0,0.1,0,0.9])
