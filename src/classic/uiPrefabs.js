@@ -102,7 +102,6 @@ function initFPS(UIManager) {
     return FPSContainer
 }
 
-// function initSideMenu that uses initMenuContent internally
 function initSideMenu(UIManager) {
     // Static comp
     let UI = UIManager
@@ -223,10 +222,13 @@ function init00(UIManager) {
     let array = UI.spawnArray(true, "left", 20 , [1,0,0,0])
     let title = UI.spawnText("Welcome", tBig, 1000, undefined, [0,0,0,0])
     array.addChild(title)
-    let txt = UI.spawnText(
-        "This front is constructed as a testing example of the new layout system built on top of clasic-wgl v0.1a0.",
-        tSmall, 450, undefined, [0,0,0,0])
+    let txt = UI.spawnText("", tSmall, 350, undefined, [0,0,0,0])
     array.addChild(txt)
+    typeWriterFx(txt,
+        "This front is constructed as a testing example of the new layout system built on top of clasic-wgl v0.1a0.",
+        20
+    );
+
     // clickable links for repo and main UI file...
     let link = initLink(UI, "> UI manager file", undefined, () => {
         window.open(
@@ -240,6 +242,8 @@ function init00(UIManager) {
             "_blank");
     });
     array.addChild(link2)
+
+
     
     return array
 }
@@ -249,11 +253,27 @@ function init01(UIManager) {
     let arrayH = UI.spawnArray(false, "center", 4, [1,0,0,0])
     let iso = UI.spawnSprite("skynetLogo", 110, 110, 0, [1,1], [0,0.2,0,0])
     let title = UI.spawnText("SKYGPU.NET", tHuge, 1000, undefined, [0,0,0,0])
-    let desc = UI.spawnText("decentralized compute network", tMid, 500, undefined, [0,0,0,0])
+    let desc = UI.spawnText("", tMid, 500, undefined, [0,0,0,0])
+    typeWriterFx(desc, "decentralized compute network", 60)
     array.addChild(title)
     array.addChild(desc)
     arrayH.addChild(iso)
     arrayH.addChild(array)
+
+    UI.root.entity.registerCall("refreshUI", () => {
+        // mobile
+        if (UI.root.width < 700) {
+            //...
+        } 
+        // desktop
+        else if (UI.root.width < 1100) {
+            //...
+        } 
+        // wide desktop
+        else {
+            //...
+        }
+    })
 
     return arrayH
 }
@@ -261,7 +281,7 @@ function init02(UIManager) {
     let UI = UIManager
     // game over component
     // create the elements
-    let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,1])
+    let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,0])
     let content = UI.spawnArray(true, "center", 12, [0,0,0,0])
     let text1 = UI.spawnText("Game over", 1.4, 200, [0.8,0.2,0.2,1])        
     let text2 = UI.spawnText("start again", 0.5, 300, undefined, [0,0.3,0,0.05])
@@ -302,7 +322,6 @@ function init03(UIManager) {
 
     return array
 }
-
 
 // Base components - generic reusable components:
 // generic button 
@@ -378,6 +397,16 @@ function initLink(UIManager, txt = "link", txtSize = tSmall, onClick = null) {
 }
 
 
-function initTyping(UIManager, txt = "typing text...", txtSize = tSmall, maxw, color, bgcolor) {
+function typeWriterFx(textElement, fullText, speed = 100) {
+    let index = 0;
+    let lastTime = Date.now();
 
+    textElement.entity.registerCall("refreshUI", () => {
+        const now = Date.now();
+        if (index < fullText.length && now - lastTime > speed) {
+            index++;
+            textElement.setText(fullText.slice(0, index));
+            lastTime = now;
+        }
+    });
 }
