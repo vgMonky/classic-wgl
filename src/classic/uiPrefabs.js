@@ -155,15 +155,15 @@ function initMenuContent(UIManager) {
         setView(0)
         toggleSideMenu()
     })
-    let btn2 = initBtn(UI, "skygpu", tMid, () => {
+    let btn2 = initBtn(UI, "gameover", tMid, () => {
         setView(1)
         toggleSideMenu()
     })
-    let btn3 = initBtn(UI, "gameover", tMid, () => {
+    let btn3 = initBtn(UI, "skygpu", tMid, () => {
         setView(2)
         toggleSideMenu()
     })
-    let btn4 = initBtn(UI, "IBG", tMid, () => {
+    let btn4 = initBtn(UI, "Box Grid", tMid, () => {
         setView(3)
         toggleSideMenu()
     })
@@ -222,11 +222,17 @@ function init00(UIManager) {
     let array = UI.spawnArray(true, "left", 20 , [1,0,0,0])
     let title = UI.spawnText("Welcome", tBig, 1000, undefined, [0,0,0,0])
     array.addChild(title)
-    let txt = UI.spawnText("", tSmall, 350, undefined, [0,0,0,0])
+    let txt = UI.spawnText("", tSmall, 320, undefined, [0,0,0,0])
     array.addChild(txt)
     typeWriterFx(txt,
         "This front is constructed as a testing example of the new layout system built on top of clasic-wgl v0.1a0.",
         20
+    );
+    let txt2 = UI.spawnText("", tSmall, 320, undefined, [0,0,0,0])
+    array.addChild(txt2)
+    typeWriterFx(txt2,
+        "Layouts are designed to work on desktop and mobile updating automatically.",
+        60
     );
 
     // clickable links for repo and main UI file...
@@ -319,10 +325,65 @@ function init02(UIManager) {
 function init03(UIManager) {
     let UI = UIManager
     let array = UI.spawnArray(true, "center", 15, [1,0,0,0])
-    let title = UI.spawnText("interactive box grid", tBig, 1000, undefined, [0,0,0,0])
+    let title = UI.spawnText("box grid", tBig, 1000, undefined, [0,0,0,0])
+    let desc = UI.spawnText("hover grid to interact", tSmall, 300, undefined, [0,0,0,0])
+
+    // build grid directly inside array
+    const gridSize = 10;
+    const gap = 4;
+    const boxSize = 25;
+
+    const grid = UI.spawnArray(true, "center", gap, [0,0,0,0]); // vertical stack of rows
+    array.addChild(grid);
     array.addChild(title)
+    array.addChild(desc)
+
+    for (let y = 0; y < gridSize; y++) {
+        let row = UI.spawnArray(false, "center", gap, [0,0,0,0]); // horizontal row
+        grid.addChild(row);
+        for (let x = 0; x < gridSize; x++) {
+            const box = createReactiveBox(UI, { size: boxSize });
+            row.addChild(box);
+        }
+    }
 
     return array
+
+    function createReactiveBox(UI, opts = {}) {
+        const size = opts.size || 30;        
+        const minScale = opts.minScale || 0.25;
+        const maxDist = opts.maxDist || 120;
+        const colorNear = opts.colorNear || [0, 0.1, 0, 1];
+        const colorFar  = opts.colorFar  || [0, 0.5, 0, 1];
+
+        const box = UI.spawnAnchor(size, size, colorFar);
+
+        box.entity.registerCall("refreshUI", () => {
+            const centerX = box.position[0] + box.width * 0.5;
+            const centerY = box.position[1] + box.height * 0.5;
+            const mx = game.mousePos[0];
+            const my = game.mousePos[1];
+            const dx = mx - centerX;
+            const dy = my - centerY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const t = Math.max(0, Math.min(1, 1 - dist / maxDist));
+            const scale = 1 - (1 - minScale) * t;
+            const newSize = Math.max(2, Math.round(size * scale));
+            box.setSize(newSize, newSize);
+            box.setPosition(centerX - newSize * 0.5, centerY - newSize * 0.5);
+
+            const lerp = (a,b,f) => a + (b-a)*f;
+            const col = [
+                lerp(colorFar[0], colorNear[0], t),
+                lerp(colorFar[1], colorNear[1], t),
+                lerp(colorFar[2], colorNear[2], t),
+                lerp(colorFar[3] ?? 1, colorNear[3] ?? 1, t)
+            ];
+            box.setColor(col);
+        });
+
+        return box;
+    }
 }
 
 // Base components - generic reusable components:

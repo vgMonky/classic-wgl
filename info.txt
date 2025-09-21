@@ -1,3 +1,4 @@
+- [ ] Update links with final files
 - [ ] New readible font for paragraph and small text
 - [ ] Border and border radius for rectangle component
 - [x] Fix setEnabled() recursive error 
