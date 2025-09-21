@@ -145,6 +145,12 @@ class UIText extends UIElement {
         return this;
     }
 
+    setMaxWidth(number) {
+        this.maxWidth = number
+        this._recalculateTextElement();
+        return this;
+    }
+
     _recalculateTextElement() {
         const scaledGlyphSize = [
             this.glyphSize[0] * this.textScale,
@@ -368,6 +374,18 @@ class UIArray extends UIElement {
 
     addChild(child) {
         this.children.push(child);
+        return this;
+    }
+
+    setVertical(flag) {
+        this.vertical = !!flag;
+        this.setChildrenPos();
+        return this;
+    }
+
+    setAlign(option) {
+        this.align = option //: left" | "center" | "right"
+        this.setChildrenPos();
         return this;
     }
 

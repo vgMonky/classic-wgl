@@ -1,6 +1,5 @@
 - [ ] New readible font for paragraph and small text
 - [ ] Border and border radius for rectangle component
-- [ ] Fix setEnabled() recursive error 
-- [ ] Typeing Fx for text
-- [ ] Destroy and InitComp() for view changes
+- [x] Fix setEnabled() recursive error 
+- [x] Typeing Fx for text
 - [ ] New branch with well organized commits

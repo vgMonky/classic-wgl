@@ -249,36 +249,6 @@ function init00(UIManager) {
 }
 function init01(UIManager) {
     let UI = UIManager
-    let array = UI.spawnArray(true, "left", 10, [1,0,0,0])
-    let arrayH = UI.spawnArray(false, "center", 4, [1,0,0,0])
-    let iso = UI.spawnSprite("skynetLogo", 110, 110, 0, [1,1], [0,0.2,0,0])
-    let title = UI.spawnText("SKYGPU.NET", tHuge, 1000, undefined, [0,0,0,0])
-    let desc = UI.spawnText("", tMid, 500, undefined, [0,0,0,0])
-    typeWriterFx(desc, "decentralized compute network", 60)
-    array.addChild(title)
-    array.addChild(desc)
-    arrayH.addChild(iso)
-    arrayH.addChild(array)
-
-    UI.root.entity.registerCall("refreshUI", () => {
-        // mobile
-        if (UI.root.width < 700) {
-            //...
-        } 
-        // desktop
-        else if (UI.root.width < 1100) {
-            //...
-        } 
-        // wide desktop
-        else {
-            //...
-        }
-    })
-
-    return arrayH
-}
-function init02(UIManager) {
-    let UI = UIManager
     // game over component
     // create the elements
     let gameover = UI.spawnPadding([40, 40, 40, 40], [0,0.1,0,0])
@@ -313,6 +283,38 @@ function init02(UIManager) {
     
 
     return gameover
+}
+function init02(UIManager) {
+    let UI = UIManager
+    let array = UI.spawnArray(true, "left", 10, [1,0,0,0])
+    let arrayH = UI.spawnArray(false, "center", 8, [1,0,0,0])
+    let iso = UI.spawnSprite("skynetLogo", 110, 110, 0, [1,1], [0,0.2,0,0])
+    let title = UI.spawnText("SKYGPU.NET", tHuge, 1000, undefined, [0,0,0,0])
+    let desc = UI.spawnText("", tMid, 500, undefined, [0,0,0,0])
+    typeWriterFx(desc, "decentralized compute layer", 60)
+    array.addChild(title)
+    array.addChild(desc)
+    arrayH.addChild(iso)
+    arrayH.addChild(array)
+
+    UI.root.entity.registerCall("refreshUI", () => {
+        // mobile
+        if (UI.root.width < 700) {
+            arrayH.setVertical(true)
+            iso.setSize(140,140)
+            title.setTextScale(tBig)
+            desc.setTextScale(0)
+        } 
+        // desktop
+        else {
+            arrayH.setVertical(false)
+            iso.setSize(110,110)
+            title.setTextScale(tHuge)
+            desc.setTextScale(tMid)
+        }
+    })
+
+    return arrayH
 }
 function init03(UIManager) {
     let UI = UIManager
@@ -359,7 +361,6 @@ function initBtn(UIManager, txt = "btn", txtSize = tMid, onClick = null) {
 
     return container;
 }
-
 // generic link 
 function initLink(UIManager, txt = "link", txtSize = tSmall, onClick = null) {
     let UI = UIManager;
