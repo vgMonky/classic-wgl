@@ -238,13 +238,13 @@ function init00(UIManager) {
     // clickable links for repo and main UI file...
     let link = initLink(UI, "> UI manager file", undefined, () => {
         window.open(
-            "https://github.com/vgMonky/classic-wgl/blob/f6969fea9be43977c3fb22f03e631191ab06e420/src/classic/ui.js",
+            "https://github.com/vgMonky/classic-wgl/blob/00-layout-sys-first-approach/src/classic/ui.js",
             "_blank");
     });
     array.addChild(link)
     let link2 = initLink(UI, "> this front file", undefined, () => {
         window.open(
-            "https://github.com/vgMonky/classic-wgl/blob/f6969fea9be43977c3fb22f03e631191ab06e420/src/classic/uiPrefabs.js",
+            "https://github.com/vgMonky/classic-wgl/blob/00-layout-sys-first-approach/src/classic/uiPrefabs.js",
             "_blank");
     });
     array.addChild(link2)
