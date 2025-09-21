@@ -290,6 +290,7 @@ export default {
         this.physics.performCalls(); 
 
         this.performCall("update");
+        this.performCall("refreshUI");
 
         this.mouseWheel = (Math.abs(this.mouseWheel) - (1.4 * this.deltaTime)) * Math.sign(this.mouseWheel); 
         this.mouseWheel = Math.min(this.mouseWheel, 1);
